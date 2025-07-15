@@ -27,7 +27,7 @@ These are the basic steps for working with the starter. For detailed guidance on
 1. [Generate a new repository](https://github.com/n8n-io/n8n-nodes-starter/generate) from this template repository.
 2. Clone your new repo:
    ```
-   git clone https://github.com/<your organization>/<your-repo-name>.git
+   git clone https://github.com/CREACH-Agency/nextlead-n8n.git
    ```
 3. Run `npm i` to install dependencies.
 4. Open the project in your editor.
