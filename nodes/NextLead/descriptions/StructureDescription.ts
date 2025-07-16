@@ -25,10 +25,10 @@ export const structureOperations: INodeProperties[] = [
 				action: 'Delete a structure',
 			},
 			{
-				name: 'Get All',
+				name: 'Get Many',
 				value: 'getAll',
-				description: 'Get all structures',
-				action: 'Get all structures',
+				description: 'Get many structures',
+				action: 'Get many structures',
 			},
 			{
 				name: 'Update',
@@ -95,6 +95,7 @@ export const structureFields: INodeProperties[] = [
 				displayName: 'Email',
 				name: 'email',
 				type: 'string',
+				placeholder: 'name@email.com',
 				typeOptions: {
 					email: true,
 				},
@@ -185,6 +186,7 @@ export const structureFields: INodeProperties[] = [
 				displayName: 'Email',
 				name: 'email',
 				type: 'string',
+				placeholder: 'name@email.com',
 				typeOptions: {
 					email: true,
 				},

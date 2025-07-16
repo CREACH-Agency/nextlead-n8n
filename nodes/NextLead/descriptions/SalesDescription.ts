@@ -8,7 +8,7 @@ export const salesOperations: INodeProperties[] = [
 		noDataExpression: true,
 		displayOptions: {
 			show: {
-				resource: ['sales'],
+				resource: ['sale'],
 			},
 		},
 		options: [
@@ -50,7 +50,7 @@ export const salesFields: INodeProperties[] = [
 		required: true,
 		displayOptions: {
 			show: {
-				resource: ['sales'],
+				resource: ['sale'],
 				operation: ['create'],
 			},
 		},
@@ -64,7 +64,7 @@ export const salesFields: INodeProperties[] = [
 		required: true,
 		displayOptions: {
 			show: {
-				resource: ['sales'],
+				resource: ['sale'],
 				operation: ['create'],
 			},
 		},
@@ -78,7 +78,7 @@ export const salesFields: INodeProperties[] = [
 		required: true,
 		displayOptions: {
 			show: {
-				resource: ['sales'],
+				resource: ['sale'],
 				operation: ['create'],
 			},
 		},
@@ -93,7 +93,7 @@ export const salesFields: INodeProperties[] = [
 		default: {},
 		displayOptions: {
 			show: {
-				resource: ['sales'],
+				resource: ['sale'],
 				operation: ['create'],
 			},
 		},
@@ -150,7 +150,7 @@ export const salesFields: INodeProperties[] = [
 		required: true,
 		displayOptions: {
 			show: {
-				resource: ['sales'],
+				resource: ['sale'],
 				operation: ['update'],
 			},
 		},
@@ -165,7 +165,7 @@ export const salesFields: INodeProperties[] = [
 		default: {},
 		displayOptions: {
 			show: {
-				resource: ['sales'],
+				resource: ['sale'],
 				operation: ['update'],
 			},
 		},
@@ -236,7 +236,7 @@ export const salesFields: INodeProperties[] = [
 		required: true,
 		displayOptions: {
 			show: {
-				resource: ['sales'],
+				resource: ['sale'],
 				operation: ['delete'],
 			},
 		},
