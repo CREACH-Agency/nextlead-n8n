@@ -1,0 +1,18 @@
+{
+	"node": "n8n-nodes-base.nextLeadAction",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Sales", "CRM"],
+	"resources": {
+		"credentialDocumentation": [
+			{
+				"url": "https://dashboard.nextlead.app/en/api-documentation"
+			}
+		],
+		"primaryDocumentation": [
+			{
+				"url": "https://dashboard.nextlead.app/en/api-documentation"
+			}
+		]
+	}
+}
