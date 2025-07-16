@@ -27,6 +27,17 @@ Abstract base class providing common functionality for all NextLead nodes:
 ### NextLeadErrorHandler
 Centralized error handling with proper error types and user-friendly messages.
 
+## Utilities
+
+### FieldDefinitionUtils
+Utility class for creating consistent field definitions across all nodes with proper TypeScript typing.
+
+### OperationHandlerUtils
+Standardized operation handlers for common CRUD operations (create, update, delete, find).
+
+### NodeExecuteUtils
+Execution utilities that provide a standardized flow for node execution with service injection.
+
 ## Usage
 
 1. Install the package in your n8n instance
@@ -42,8 +53,10 @@ For detailed API documentation, visit: https://dashboard.nextlead.app/en/api-doc
 Each node follows the Single Responsibility Principle:
 - One node per resource type
 - Clear separation of concerns
-- Reusable core services
-- Consistent error handling
+- Reusable core services and utilities
+- Consistent error handling with `NodeOperationError`
+- Unified configuration via `NextLead.node.json`
+- Standardized field definitions via `FieldDefinitionUtils`
 
 ## Development
 
@@ -60,7 +73,9 @@ Each node follows the Single Responsibility Principle:
 1. Create a new node class extending `BaseNextLeadNode`
 2. Implement required abstract methods
 3. Add corresponding API methods to `NextLeadApiService`
-4. Create the node.json configuration file
+4. Add the new node export to `NextLead.node.ts`
+5. Update `package.json` to include the new compiled node
+6. Use the unified `NextLead.node.json` for metadata (no need to create individual JSON files)
 
 ## Migration from Legacy Node
 
