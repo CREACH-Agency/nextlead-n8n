@@ -39,7 +39,7 @@ export class NextLeadContact extends BaseNextLeadNode implements INodeExecuteCon
 				displayName: 'Operation',
 				description: 'Operation to perform',
 				required: true,
-				operations: [], // Not applicable for operation field itself
+				operations: [],
 				options: [
 					{
 						name: 'Create',

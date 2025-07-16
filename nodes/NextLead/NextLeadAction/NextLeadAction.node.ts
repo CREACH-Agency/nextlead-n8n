@@ -1,17 +1,25 @@
 import {
-  IExecuteFunctions,
+	IExecuteFunctions,
 	INodeTypeDescription,
 	IDataObject,
 	INodeProperties,
 	INodeExecutionData,
 	NodeOperationError,
-	ICredentialDataDecryptedObject,
 } from 'n8n-workflow';
 
 import { BaseNextLeadNode } from '../core/BaseNextLeadNode';
 import { ResourceType, OperationType } from '../core/types/NextLeadTypes';
+import { NodeExecuteUtils, INodeExecuteContext } from '../utils/NodeExecuteUtils';
+import { FieldDefinitionUtils } from '../utils/FieldDefinitionUtils';
+import {
+	OperationHandlerUtils,
+	IApiService,
+	IUpdateOperationConfig,
+	IDeleteOperationConfig,
+	IOperationConfig,
+} from '../utils/OperationHandlerUtils';
 
-export class NextLeadAction extends BaseNextLeadNode {
+export class NextLeadAction extends BaseNextLeadNode implements INodeExecuteContext {
 	description: INodeTypeDescription = this.getBaseDescription(
 		'NextLead Action',
 		'nextLeadAction',
@@ -25,11 +33,12 @@ export class NextLeadAction extends BaseNextLeadNode {
 
 	getOperations(): INodeProperties[] {
 		return [
-			{
-				displayName: 'Operation',
+			FieldDefinitionUtils.createOptionsField({
 				name: 'operation',
-				type: 'options',
-				noDataExpression: true,
+				displayName: 'Operation',
+				description: 'Operation to perform',
+				required: true,
+				operations: [],
 				options: [
 					{
 						name: 'Create',
@@ -57,383 +66,158 @@ export class NextLeadAction extends BaseNextLeadNode {
 					},
 				],
 				default: 'create',
-			},
+			}),
 		];
 	}
 
 	getFields(): INodeProperties[] {
 		return [
 			// Create fields
-			{
-				displayName: 'Contact ID',
+			FieldDefinitionUtils.createStringField({
 				name: 'contactId',
-				type: 'string',
-				required: true,
-				displayOptions: {
-					show: {
-						operation: ['create'],
-					},
-				},
-				default: '',
+				displayName: 'Contact ID',
 				description: 'ID of the contact associated with the action',
-			},
-			{
-				displayName: 'Column ID',
+				required: true,
+				operations: ['create'],
+			}),
+			FieldDefinitionUtils.createStringField({
 				name: 'columnId',
-				type: 'string',
-				required: true,
-				displayOptions: {
-					show: {
-						operation: ['create'],
-					},
-				},
-				default: '',
+				displayName: 'Column ID',
 				description: 'ID of the action column/stage',
-			},
-			{
-				displayName: 'Title',
-				name: 'title',
-				type: 'string',
 				required: true,
-				displayOptions: {
-					show: {
-						operation: ['create'],
-					},
-				},
-				default: '',
+				operations: ['create'],
+			}),
+			FieldDefinitionUtils.createStringField({
+				name: 'title',
+				displayName: 'Title',
 				description: 'Title of the action',
-			},
-			{
-				displayName: 'Additional Fields',
+				required: true,
+				operations: ['create'],
+			}),
+			FieldDefinitionUtils.createCollectionField({
 				name: 'additionalFields',
-				type: 'collection',
-				placeholder: 'Add Field',
-				default: {},
-				displayOptions: {
-					show: {
-						operation: ['create'],
-					},
-				},
-				options: [
+				displayName: 'Additional Fields',
+				description: 'Additional fields for the action',
+				operations: ['create'],
+				fields: [
 					{
 						displayName: 'Description',
 						name: 'description',
-						type: 'string',
-						typeOptions: {
-							rows: 3,
-						},
-						default: '',
 						description: 'Action description',
+						default: '',
 					},
 					{
 						displayName: 'Due Date',
 						name: 'dueDate',
-						type: 'dateTime',
-						default: '',
 						description: 'Due date for the action',
+						default: '',
 					},
 					{
 						displayName: 'Priority',
 						name: 'priority',
-						type: 'options',
-						options: [
-							{
-								name: 'Low',
-								value: 'low',
-							},
-							{
-								name: 'Medium',
-								value: 'medium',
-							},
-							{
-								name: 'High',
-								value: 'high',
-							},
-							{
-								name: 'Urgent',
-								value: 'urgent',
-							},
-						],
-						default: 'medium',
 						description: 'Priority level of the action',
+						default: 'medium',
 					},
 					{
 						displayName: 'Status',
 						name: 'status',
-						type: 'options',
-						options: [
-							{
-								name: 'Open',
-								value: 'open',
-							},
-							{
-								name: 'In Progress',
-								value: 'in_progress',
-							},
-							{
-								name: 'Completed',
-								value: 'completed',
-							},
-							{
-								name: 'Cancelled',
-								value: 'cancelled',
-							},
-						],
-						default: 'open',
 						description: 'Status of the action',
+						default: 'open',
 					},
 				],
-			},
-			// Update fields
-			{
-				displayName: 'Action ID',
+			}),
+			// Update and Delete fields
+			FieldDefinitionUtils.createIdField({
 				name: 'actionId',
-				type: 'string',
-				required: true,
-				displayOptions: {
-					show: {
-						operation: ['update', 'delete'],
-					},
-				},
-				default: '',
+				displayName: 'Action ID',
 				description: 'ID of the action to update or delete',
-			},
-			{
-				displayName: 'Update Fields',
+				operations: ['update', 'delete'],
+			}),
+			FieldDefinitionUtils.createCollectionField({
 				name: 'updateFields',
-				type: 'collection',
-				placeholder: 'Add Field',
-				default: {},
-				displayOptions: {
-					show: {
-						operation: ['update'],
-					},
-				},
-				options: [
+				displayName: 'Update Fields',
+				description: 'Fields to update',
+				operations: ['update'],
+				fields: [
 					{
 						displayName: 'Column ID',
 						name: 'columnId',
-						type: 'string',
-						default: '',
 						description: 'ID of the action column/stage',
+						default: '',
 					},
 					{
 						displayName: 'Contact ID',
 						name: 'contactId',
-						type: 'string',
-						default: '',
 						description: 'ID of the contact associated with the action',
+						default: '',
 					},
 					{
 						displayName: 'Description',
 						name: 'description',
-						type: 'string',
-						typeOptions: {
-							rows: 3,
-						},
-						default: '',
 						description: 'Action description',
+						default: '',
 					},
 					{
 						displayName: 'Due Date',
 						name: 'dueDate',
-						type: 'dateTime',
-						default: '',
 						description: 'Due date for the action',
+						default: '',
 					},
 					{
 						displayName: 'Priority',
 						name: 'priority',
-						type: 'options',
-						options: [
-							{
-								name: 'Low',
-								value: 'low',
-							},
-							{
-								name: 'Medium',
-								value: 'medium',
-							},
-							{
-								name: 'High',
-								value: 'high',
-							},
-							{
-								name: 'Urgent',
-								value: 'urgent',
-							},
-						],
-						default: 'medium',
 						description: 'Priority level of the action',
+						default: 'medium',
 					},
 					{
 						displayName: 'Status',
 						name: 'status',
-						type: 'options',
-						options: [
-							{
-								name: 'Open',
-								value: 'open',
-							},
-							{
-								name: 'In Progress',
-								value: 'in_progress',
-							},
-							{
-								name: 'Completed',
-								value: 'completed',
-							},
-							{
-								name: 'Cancelled',
-								value: 'cancelled',
-							},
-						],
-						default: 'open',
 						description: 'Status of the action',
+						default: 'open',
 					},
 					{
 						displayName: 'Title',
 						name: 'title',
-						type: 'string',
-						default: '',
 						description: 'Title of the action',
+						default: '',
 					},
 				],
-			},
+			}),
 		];
 	}
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
-		const items = this.getInputData();
-		const returnData: IDataObject[] = [];
-
-		const credentials = await this.getCredentials('nextLeadApi') as ICredentialDataDecryptedObject;
-		const { NextLeadApiService } = await import('../core/NextLeadApiService');
-		const apiService = new NextLeadApiService(credentials as any);
-
-		for (let i = 0; i < items.length; i++) {
-			try {
-				const operation = this.getNodeParameter('operation', i) as OperationType;
-				const result = await (this as any).executeOperationWithService(this, operation, i, apiService);
-
-				if (result) {
-					const processedResult = Array.isArray(result) ? result : [result as IDataObject];
-					returnData.push(...processedResult);
-				}
-			} catch (error: any) {
-				if (this.continueOnFail()) {
-					returnData.push({
-						error: error.message || 'Unknown error',
-						statusCode: error.statusCode || 500,
-						timestamp: new Date().toISOString(),
-					});
-				} else {
-					throw new NodeOperationError(this.getNode(), error.message);
-				}
-			}
-		}
-
-		return [this.helpers.returnJsonArray(returnData)];
+		return NodeExecuteUtils.executeStandardFlow(this, this as any);
 	}
 
-	protected async executeOperationWithService(
+	async executeOperationWithService(
 		context: IExecuteFunctions,
 		operation: OperationType,
 		itemIndex: number,
-		apiService: any
+		apiService: IApiService
 	): Promise<any> {
 		switch (operation) {
 			case 'create':
-				return this.createActionWithService(context, itemIndex, apiService);
+				return this.handleCreateAction(context, itemIndex, apiService);
 			case 'update':
-				return this.updateActionWithService(context, itemIndex, apiService);
+				return this.handleUpdateAction(context, itemIndex, apiService);
 			case 'delete':
-				return this.deleteActionWithService(context, itemIndex, apiService);
+				return this.handleDeleteAction(context, itemIndex, apiService);
 			case 'getColumns':
-				return this.getActionsColumnsWithService(context, apiService);
+				return this.handleGetActionsColumns(context, apiService);
 			default:
-				throw new NodeOperationError(context.getNode(), `Operation "${operation}" is not supported`);
+				throw new NodeOperationError(
+					context.getNode(),
+					`Operation "${operation}" is not supported`
+				);
 		}
 	}
 
-	protected async executeOperation(
+	private async handleCreateAction(
 		context: IExecuteFunctions,
-		operation: OperationType,
-		itemIndex: number
+		itemIndex: number,
+		apiService: IApiService
 	): Promise<any> {
-		if (!this.apiService) {
-			throw new NodeOperationError(context.getNode(), 'API service not initialized');
-		}
-
-		switch (operation) {
-			case 'create':
-				return this.createAction(context, itemIndex);
-			case 'update':
-				return this.updateAction(context, itemIndex);
-			case 'delete':
-				return this.deleteAction(context, itemIndex);
-			case 'getColumns':
-				return this.getActionsColumns(context);
-			default:
-				throw new NodeOperationError(context.getNode(), `Operation "${operation}" is not supported`);
-		}
-	}
-
-	private async createAction(context: IExecuteFunctions, itemIndex: number): Promise<any> {
-		const contactId = context.getNodeParameter('contactId', itemIndex) as string;
-		const columnId = context.getNodeParameter('columnId', itemIndex) as string;
-		const title = context.getNodeParameter('title', itemIndex) as string;
-		const additionalFields = context.getNodeParameter('additionalFields', itemIndex) as IDataObject;
-
-		const actionData: IDataObject = {
-			contactId,
-			columnId,
-			title,
-			...additionalFields,
-		};
-
-		const response = await this.apiService!.createAction(context, actionData);
-		if (!response.success) {
-			throw new NodeOperationError(context.getNode(), response.error || 'Create action failed');
-		}
-		return response.data;
-	}
-
-	private async updateAction(context: IExecuteFunctions, itemIndex: number): Promise<any> {
-		const actionId = context.getNodeParameter('actionId', itemIndex) as string;
-		const updateFields = context.getNodeParameter('updateFields', itemIndex) as IDataObject;
-
-		const actionData: IDataObject = {
-			id: actionId,
-			...updateFields,
-		};
-
-		const response = await this.apiService!.updateAction(context, actionData);
-		if (!response.success) {
-			throw new NodeOperationError(context.getNode(), response.error || 'Update action failed');
-		}
-		return response.data;
-	}
-
-	private async deleteAction(context: IExecuteFunctions, itemIndex: number): Promise<any> {
-		const actionId = context.getNodeParameter('actionId', itemIndex) as string;
-
-		const response = await this.apiService!.deleteAction(context, actionId);
-		if (!response.success) {
-			throw new NodeOperationError(context.getNode(), response.error || 'Delete action failed');
-		}
-		return response.data;
-	}
-
-	private async getActionsColumns(context: IExecuteFunctions): Promise<any> {
-		const response = await this.apiService!.getActionsColumns(context);
-		if (!response.success) {
-			throw new NodeOperationError(context.getNode(), response.error || 'Get actions columns failed');
-		}
-		return response.data;
-	}
-
-	private async createActionWithService(context: IExecuteFunctions, itemIndex: number, apiService: any): Promise<any> {
 		const contactId = context.getNodeParameter('contactId', itemIndex) as string;
 		const columnId = context.getNodeParameter('columnId', itemIndex) as string;
 		const title = context.getNodeParameter('title', itemIndex) as string;
@@ -447,43 +231,73 @@ export class NextLeadAction extends BaseNextLeadNode {
 		};
 
 		const response = await apiService.createAction(context, actionData);
-		if (!response.success) {
-			throw new NodeOperationError(context.getNode(), response.error || 'Create action failed');
-		}
+		NodeExecuteUtils.validateApiResponse(response, 'Create Action');
 		return response.data;
 	}
 
-	private async updateActionWithService(context: IExecuteFunctions, itemIndex: number, apiService: any): Promise<any> {
-		const actionId = context.getNodeParameter('actionId', itemIndex) as string;
-		const updateFields = context.getNodeParameter('updateFields', itemIndex) as IDataObject;
-
-		const actionData: IDataObject = {
-			id: actionId,
-			...updateFields,
+	private async handleUpdateAction(
+		context: IExecuteFunctions,
+		itemIndex: number,
+		apiService: IApiService
+	): Promise<any> {
+		const config: IUpdateOperationConfig = {
+			operationName: 'Update Action',
+			requiredParams: [],
+			idParam: 'actionId',
+			updateFieldsParam: 'updateFields',
+			apiMethodName: 'updateAction',
 		};
 
-		const response = await apiService.updateAction(context, actionData);
-		if (!response.success) {
-			throw new NodeOperationError(context.getNode(), response.error || 'Update action failed');
-		}
-		return response.data;
+		return OperationHandlerUtils.handleUpdateOperation(
+			context,
+			itemIndex,
+			apiService,
+			config
+		);
 	}
 
-	private async deleteActionWithService(context: IExecuteFunctions, itemIndex: number, apiService: any): Promise<any> {
-		const actionId = context.getNodeParameter('actionId', itemIndex) as string;
+	private async handleDeleteAction(
+		context: IExecuteFunctions,
+		itemIndex: number,
+		apiService: IApiService
+	): Promise<any> {
+		const config: IDeleteOperationConfig = {
+			operationName: 'Delete Action',
+			requiredParams: [],
+			idParam: 'actionId',
+			apiMethodName: 'deleteAction',
+		};
 
-		const response = await apiService.deleteAction(context, actionId);
-		if (!response.success) {
-			throw new NodeOperationError(context.getNode(), response.error || 'Delete action failed');
-		}
-		return response.data;
+		return OperationHandlerUtils.handleDeleteOperation(
+			context,
+			itemIndex,
+			apiService,
+			config
+		);
 	}
 
-	private async getActionsColumnsWithService(context: IExecuteFunctions, apiService: any): Promise<any> {
-		const response = await apiService.getActionsColumns(context);
-		if (!response.success) {
-			throw new NodeOperationError(context.getNode(), response.error || 'Get actions columns failed');
+	private async handleGetActionsColumns(
+		context: IExecuteFunctions,
+		apiService: IApiService
+	): Promise<any> {
+		const config: IOperationConfig = {
+			operationName: 'Get Actions Columns',
+			requiredParams: [],
+			apiMethodName: 'getActionsColumns',
+		};
+
+		return OperationHandlerUtils.handleGetOperation(context, apiService, config);
+	}
+
+	protected async executeOperation(
+		context: IExecuteFunctions,
+		operation: OperationType,
+		itemIndex: number
+	): Promise<any> {
+		if (!this.apiService) {
+			throw new NodeOperationError(context.getNode(), 'API service not initialized');
 		}
-		return response.data;
+
+		return this.executeOperationWithService(context, operation, itemIndex, this.apiService);
 	}
 }

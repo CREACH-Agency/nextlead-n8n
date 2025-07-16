@@ -1,17 +1,22 @@
 import {
 	IExecuteFunctions,
 	INodeTypeDescription,
-	IDataObject,
 	INodeProperties,
 	INodeExecutionData,
 	NodeOperationError,
-	ICredentialDataDecryptedObject,
 } from 'n8n-workflow';
 
 import { BaseNextLeadNode } from '../core/BaseNextLeadNode';
 import { ResourceType, OperationType } from '../core/types/NextLeadTypes';
+import { NodeExecuteUtils, INodeExecuteContext } from '../utils/NodeExecuteUtils';
+import { FieldDefinitionUtils } from '../utils/FieldDefinitionUtils';
+import {
+	OperationHandlerUtils,
+	IApiService,
+	IOperationConfig,
+} from '../utils/OperationHandlerUtils';
 
-export class NextLeadList extends BaseNextLeadNode {
+export class NextLeadList extends BaseNextLeadNode implements INodeExecuteContext {
 	description: INodeTypeDescription = this.getBaseDescription(
 		'NextLead List',
 		'nextLeadList',
@@ -25,11 +30,12 @@ export class NextLeadList extends BaseNextLeadNode {
 
 	getOperations(): INodeProperties[] {
 		return [
-			{
-				displayName: 'Operation',
+			FieldDefinitionUtils.createOptionsField({
 				name: 'operation',
-				type: 'options',
-				noDataExpression: true,
+				displayName: 'Operation',
+				description: 'Operation to perform',
+				required: true,
+				operations: [],
 				options: [
 					{
 						name: 'Get Many',
@@ -39,7 +45,7 @@ export class NextLeadList extends BaseNextLeadNode {
 					},
 				],
 				default: 'getAll',
-			},
+			}),
 		];
 	}
 
@@ -48,50 +54,37 @@ export class NextLeadList extends BaseNextLeadNode {
 	}
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
-		const items = this.getInputData();
-		const returnData: IDataObject[] = [];
-
-		const credentials = await this.getCredentials('nextLeadApi') as ICredentialDataDecryptedObject;
-		const { NextLeadApiService } = await import('../core/NextLeadApiService');
-		const apiService = new NextLeadApiService(credentials as any);
-
-		for (let i = 0; i < items.length; i++) {
-			try {
-				const operation = this.getNodeParameter('operation', i) as OperationType;
-				const result = await (this as any).executeOperationWithService(this, operation, i, apiService);
-
-				if (result) {
-					const processedResult = Array.isArray(result) ? result : [result as IDataObject];
-					returnData.push(...processedResult);
-				}
-			} catch (error: any) {
-				if (this.continueOnFail()) {
-					returnData.push({
-						error: error.message || 'Unknown error',
-						statusCode: error.statusCode || 500,
-						timestamp: new Date().toISOString(),
-					});
-				} else {
-					throw new NodeOperationError(this.getNode(), error.message);
-				}
-			}
-		}
-
-		return [this.helpers.returnJsonArray(returnData)];
+		return NodeExecuteUtils.executeStandardFlow(this, this as any);
 	}
 
-	protected async executeOperationWithService(
+	async executeOperationWithService(
 		context: IExecuteFunctions,
 		operation: OperationType,
-		itemIndex: number,
-		apiService: any
+		_itemIndex: number,
+		apiService: IApiService
 	): Promise<any> {
 		switch (operation) {
 			case 'getAll':
-				return this.getListsWithService(context, apiService);
+				return this.handleGetAllLists(context, apiService);
 			default:
-				throw new NodeOperationError(context.getNode(), `Operation "${operation}" is not supported`);
+				throw new NodeOperationError(
+					context.getNode(),
+					`Operation "${operation}" is not supported`
+				);
 		}
+	}
+
+	private async handleGetAllLists(
+		context: IExecuteFunctions,
+		apiService: IApiService
+	): Promise<any> {
+		const config: IOperationConfig = {
+			operationName: 'Get All Lists',
+			requiredParams: [],
+			apiMethodName: 'getLists',
+		};
+
+		return OperationHandlerUtils.handleGetOperation(context, apiService, config);
 	}
 
 	protected async executeOperation(
@@ -103,27 +96,6 @@ export class NextLeadList extends BaseNextLeadNode {
 			throw new NodeOperationError(context.getNode(), 'API service not initialized');
 		}
 
-		switch (operation) {
-			case 'getAll':
-				return this.getLists(context);
-			default:
-				throw new NodeOperationError(context.getNode(), `Operation "${operation}" is not supported`);
-		}
-	}
-
-	private async getLists(context: IExecuteFunctions): Promise<any> {
-		const response = await this.apiService!.getLists(context);
-		if (!response.success) {
-			throw new NodeOperationError(context.getNode(), response.error || 'Get lists failed');
-		}
-		return response.data;
-	}
-
-	private async getListsWithService(context: IExecuteFunctions, apiService: any): Promise<any> {
-		const response = await apiService.getLists(context);
-		if (!response.success) {
-			throw new NodeOperationError(context.getNode(), response.error || 'Get lists failed');
-		}
-		return response.data;
+		return this.executeOperationWithService(context, operation, itemIndex, this.apiService);
 	}
 }
