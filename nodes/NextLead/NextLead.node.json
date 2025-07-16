@@ -1,5 +1,5 @@
 {
-	"node": "n8n-nodes-base.nextLeadStructure",
+	"node": "n8n-nodes-base.nextLead",
 	"nodeVersion": "1.0",
 	"codexVersion": "1.0",
 	"categories": ["Sales", "CRM"],
