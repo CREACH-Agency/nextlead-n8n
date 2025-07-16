@@ -22,7 +22,7 @@ export abstract class BaseNextLeadNode implements INodeType {
 	protected getBaseDescription(
 		displayName: string,
 		name: string,
-		subtitle: string,
+		_subtitle: string,
 		resourceType: ResourceType
 	): INodeTypeDescription {
 		return {
