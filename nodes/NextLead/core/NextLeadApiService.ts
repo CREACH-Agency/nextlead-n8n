@@ -3,6 +3,7 @@ import { NextLeadCredentials, RequestConfig, NextLeadApiResponse } from './types
 
 export class NextLeadApiService {
 	private credentials: NextLeadCredentials;
+	[key: string]: any;
 
 	constructor(credentials: NextLeadCredentials) {
 		this.credentials = credentials;

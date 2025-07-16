@@ -54,8 +54,8 @@ export class NextLeadContact extends BaseNextLeadNode implements INodeExecuteCon
 						action: 'Delete a contact',
 					},
 					{
-						name: 'Find',
-						value: 'find',
+						name: 'Get',
+						value: 'get',
 						description: 'Find a contact by email or LinkedIn',
 						action: 'Find a contact',
 					},
@@ -171,7 +171,7 @@ export class NextLeadContact extends BaseNextLeadNode implements INodeExecuteCon
 				displayName: 'Search By',
 				description: 'Field to search by',
 				required: true,
-				operations: ['find'],
+				operations: ['get'],
 				options: [
 					{
 						name: 'Email',
@@ -189,7 +189,7 @@ export class NextLeadContact extends BaseNextLeadNode implements INodeExecuteCon
 				displayName: 'Search Value',
 				description: 'Value to search for',
 				required: true,
-				operations: ['find'],
+				operations: ['get'],
 			}),
 		];
 	}
@@ -211,7 +211,7 @@ export class NextLeadContact extends BaseNextLeadNode implements INodeExecuteCon
 				return this.handleUpdateContact(context, itemIndex, apiService);
 			case 'delete':
 				return this.handleDeleteContact(context, itemIndex, apiService);
-			case 'find':
+			case 'get':
 				return this.handleFindContact(context, itemIndex, apiService);
 			case 'getTeam':
 				return this.handleGetTeam(context, apiService);
@@ -368,7 +368,7 @@ export class NextLeadContact extends BaseNextLeadNode implements INodeExecuteCon
 				return this.updateContact(context, itemIndex);
 			case 'delete':
 				return this.deleteContact(context, itemIndex);
-			case 'find':
+			case 'get':
 				return this.findContact(context, itemIndex);
 			case 'getTeam':
 				return this.getTeam(context);

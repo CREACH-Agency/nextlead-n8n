@@ -73,4 +73,4 @@ export type ActionData = {
 }
 
 export type ResourceType = 'contact' | 'structure' | 'sale' | 'action' | 'list';
-export type OperationType = 'create' | 'update' | 'delete' | 'find' | 'getAll' | 'getTeam' | 'getConversion' | 'getCustomFields' | 'getColumns';
+export type OperationType = 'create' | 'update' | 'delete' | 'get' | 'getAll' | 'getTeam' | 'getConversion' | 'getCustomFields' | 'getColumns';
