@@ -1,8 +1,9 @@
-import { IExecuteFunctions, INodeExecutionData, INodeProperties } from 'n8n-workflow';
+import { IExecuteFunctions, INodeExecutionData, INodeProperties, IDataObject } from 'n8n-workflow';
 
-import { ResourceType, OperationType } from '../core/types/NextLeadTypes';
+import { ResourceType, OperationType, NextLeadCredentials } from '../core/types/NextLeadTypes';
 import { IResourceStrategy } from '../core/interfaces/IResourceStrategy';
 import { FieldDefinitionUtils } from '../utils/FieldDefinitionUtils';
+import { NextLeadApiService } from '../core/NextLeadApiService';
 
 export class StructureResource implements IResourceStrategy {
 	getResourceType(): ResourceType {
@@ -31,12 +32,6 @@ export class StructureResource implements IResourceStrategy {
 						value: 'delete',
 						description: 'Delete a structure',
 						action: 'Delete a structure',
-					},
-					{
-						name: 'Get',
-						value: 'get',
-						description: 'Get a structure',
-						action: 'Get a structure',
 					},
 					{
 						name: 'Get Many',
@@ -165,14 +160,6 @@ export class StructureResource implements IResourceStrategy {
 				operations: ['delete'],
 			}),
 
-			// Get fields
-			FieldDefinitionUtils.createIdField({
-				name: 'structureId',
-				displayName: 'Structure ID',
-				description: 'ID of the structure to get',
-				operations: ['get'],
-			}),
-
 			// Get Many fields
 			FieldDefinitionUtils.createNumberField({
 				name: 'limit',
@@ -190,19 +177,97 @@ export class StructureResource implements IResourceStrategy {
 		context: IExecuteFunctions,
 		itemIndex: number,
 	): Promise<INodeExecutionData[]> {
+		const credentials = await context.getCredentials('nextLeadApi') as NextLeadCredentials;
+		const apiService = new NextLeadApiService(credentials);
+
 		switch (operation) {
 			case 'create':
-				return [{ json: { message: 'Structure create operation - TODO' } }];
+				return this.handleCreateStructure(context, itemIndex, apiService);
 			case 'update':
-				return [{ json: { message: 'Structure update operation - TODO' } }];
+				return this.handleUpdateStructure(context, itemIndex, apiService);
 			case 'delete':
-				return [{ json: { message: 'Structure delete operation - TODO' } }];
-			case 'get':
-				return [{ json: { message: 'Structure get operation - TODO' } }];
+				return this.handleDeleteStructure(context, itemIndex, apiService);
 			case 'getMany':
-				return [{ json: { message: 'Structure getMany operation - TODO' } }];
+				return this.handleGetManyStructures(context, apiService);
 			default:
 				throw new Error(`Unknown operation: ${operation}`);
 		}
+	}
+
+	private async handleCreateStructure(
+		context: IExecuteFunctions,
+		itemIndex: number,
+		apiService: NextLeadApiService,
+	): Promise<INodeExecutionData[]> {
+		const name = context.getNodeParameter('name', itemIndex) as string;
+		const additionalFields = context.getNodeParameter('additionalFields', itemIndex, {}) as IDataObject;
+
+		const structureData: IDataObject = {
+			name,
+			...additionalFields,
+		};
+
+		const response = await apiService.createStructure(context, structureData);
+
+		if (!response.success) {
+			throw new Error(`Failed to create structure: ${response.error}`);
+		}
+
+		return [{ json: response.data }];
+	}
+
+	private async handleUpdateStructure(
+		context: IExecuteFunctions,
+		itemIndex: number,
+		apiService: NextLeadApiService,
+	): Promise<INodeExecutionData[]> {
+		const structureId = context.getNodeParameter('structureId', itemIndex) as string;
+		const updateFields = context.getNodeParameter('updateFields', itemIndex, {}) as IDataObject;
+
+		const updateData: IDataObject = {
+			id: structureId,
+			...updateFields,
+		};
+
+		const response = await apiService.updateStructure(context, updateData);
+
+		if (!response.success) {
+			throw new Error(`Failed to update structure: ${response.error}`);
+		}
+
+		return [{ json: response.data }];
+	}
+
+	private async handleDeleteStructure(
+		context: IExecuteFunctions,
+		itemIndex: number,
+		apiService: NextLeadApiService,
+	): Promise<INodeExecutionData[]> {
+		const structureId = context.getNodeParameter('structureId', itemIndex) as string;
+
+		const response = await apiService.deleteStructure(context, structureId);
+
+		if (!response.success) {
+			throw new Error(`Failed to delete structure: ${response.error}`);
+		}
+
+		return [{ json: { success: true, message: 'Structure deleted successfully', structureId } }];
+	}
+
+	private async handleGetManyStructures(
+		context: IExecuteFunctions,
+		apiService: NextLeadApiService,
+	): Promise<INodeExecutionData[]> {
+		const response = await apiService.getStructures(context);
+
+		if (!response.success) {
+			throw new Error(`Failed to get structures: ${response.error}`);
+		}
+
+		if (Array.isArray(response.data)) {
+			return response.data.map(structure => ({ json: structure }));
+		}
+
+		return [{ json: response.data }];
 	}
 }

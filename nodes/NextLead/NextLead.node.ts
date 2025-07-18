@@ -10,6 +10,10 @@ import {
 
 import { ResourceManager } from './core/ResourceManager';
 import { ContactResource } from './resources/ContactResource';
+import { StructureResource } from './resources/StructureResource';
+import { SaleResource } from './resources/SaleResource';
+import { ActionResource } from './resources/ActionResource';
+import { ListResource } from './resources/ListResource';
 import { NextLeadErrorHandler } from './core/NextLeadErrorHandler';
 import { ResourceType, OperationType } from './core/types/NextLeadTypes';
 
@@ -80,11 +84,10 @@ export class NextLead implements INodeType {
 		const manager = new ResourceManager();
 		// Register all resource strategies
 		manager.register(new ContactResource());
-		// TODO: Add other resources
-		// manager.register(new StructureResource());
-		// manager.register(new SaleResource());
-		// manager.register(new ActionResource());
-		// manager.register(new ListResource());
+		manager.register(new StructureResource());
+		manager.register(new SaleResource());
+		manager.register(new ActionResource());
+		manager.register(new ListResource());
 		return manager;
 	}
 

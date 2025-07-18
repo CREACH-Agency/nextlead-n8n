@@ -174,7 +174,7 @@ export class NextLeadApiService {
 
 	async updateAction(context: IExecuteFunctions, actionData: IDataObject): Promise<NextLeadApiResponse> {
 		return this.makeRequest(context, {
-			method: 'POST',
+			method: 'PUT',
 			endpoint: '/api/v2/receive/actions/update-action',
 			data: actionData,
 		});

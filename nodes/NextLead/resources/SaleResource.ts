@@ -1,8 +1,9 @@
-import { IExecuteFunctions, INodeExecutionData, INodeProperties } from 'n8n-workflow';
+import { IExecuteFunctions, INodeExecutionData, INodeProperties, IDataObject } from 'n8n-workflow';
 
-import { ResourceType, OperationType } from '../core/types/NextLeadTypes';
+import { ResourceType, OperationType, NextLeadCredentials } from '../core/types/NextLeadTypes';
 import { IResourceStrategy } from '../core/interfaces/IResourceStrategy';
 import { FieldDefinitionUtils } from '../utils/FieldDefinitionUtils';
+import { NextLeadApiService } from '../core/NextLeadApiService';
 
 export class SaleResource implements IResourceStrategy {
 	getResourceType(): ResourceType {
@@ -37,6 +38,12 @@ export class SaleResource implements IResourceStrategy {
 						value: 'get',
 						description: 'Get a sale',
 						action: 'Get a sale',
+					},
+					{
+						name: 'Get Columns',
+						value: 'getColumns',
+						description: 'Get sale columns',
+						action: 'Get sale columns',
 					},
 					{
 						name: 'Get Many',
@@ -192,19 +199,105 @@ export class SaleResource implements IResourceStrategy {
 		context: IExecuteFunctions,
 		itemIndex: number,
 	): Promise<INodeExecutionData[]> {
+		const credentials = await context.getCredentials('nextLeadApi') as NextLeadCredentials;
+		const apiService = new NextLeadApiService(credentials);
+
 		switch (operation) {
 			case 'create':
-				return [{ json: { message: 'Sale create operation - TODO' } }];
+				return this.handleCreateSale(context, itemIndex, apiService);
 			case 'update':
-				return [{ json: { message: 'Sale update operation - TODO' } }];
+				return this.handleUpdateSale(context, itemIndex, apiService);
 			case 'delete':
-				return [{ json: { message: 'Sale delete operation - TODO' } }];
+				return this.handleDeleteSale(context, itemIndex, apiService);
 			case 'get':
-				return [{ json: { message: 'Sale get operation - TODO' } }];
+				return [{ json: { message: 'Get single sale not available in API' } }];
 			case 'getMany':
-				return [{ json: { message: 'Sale getMany operation - TODO' } }];
+				return [{ json: { message: 'Get many sales not available in API' } }];
+			case 'getColumns':
+				return this.handleGetColumns(context, apiService);
 			default:
 				throw new Error(`Unknown operation: ${operation}`);
 		}
+	}
+
+	private async handleCreateSale(
+		context: IExecuteFunctions,
+		itemIndex: number,
+		apiService: NextLeadApiService,
+	): Promise<INodeExecutionData[]> {
+		const contactId = context.getNodeParameter('contactId', itemIndex) as string;
+		const columnId = context.getNodeParameter('columnId', itemIndex) as string;
+		const name = context.getNodeParameter('name', itemIndex) as string;
+		const additionalFields = context.getNodeParameter('additionalFields', itemIndex, {}) as IDataObject;
+
+		const saleData: IDataObject = {
+			contactId,
+			columnId,
+			name,
+			...additionalFields,
+		};
+
+		const response = await apiService.createSale(context, saleData);
+
+		if (!response.success) {
+			throw new Error(`Failed to create sale: ${response.error}`);
+		}
+
+		return [{ json: response.data }];
+	}
+
+	private async handleUpdateSale(
+		context: IExecuteFunctions,
+		itemIndex: number,
+		apiService: NextLeadApiService,
+	): Promise<INodeExecutionData[]> {
+		const saleId = context.getNodeParameter('saleId', itemIndex) as string;
+		const updateFields = context.getNodeParameter('updateFields', itemIndex, {}) as IDataObject;
+
+		const updateData: IDataObject = {
+			id: saleId,
+			...updateFields,
+		};
+
+		const response = await apiService.updateSale(context, updateData);
+
+		if (!response.success) {
+			throw new Error(`Failed to update sale: ${response.error}`);
+		}
+
+		return [{ json: response.data }];
+	}
+
+	private async handleDeleteSale(
+		context: IExecuteFunctions,
+		itemIndex: number,
+		apiService: NextLeadApiService,
+	): Promise<INodeExecutionData[]> {
+		const saleId = context.getNodeParameter('saleId', itemIndex) as string;
+
+		const response = await apiService.deleteSale(context, saleId);
+
+		if (!response.success) {
+			throw new Error(`Failed to delete sale: ${response.error}`);
+		}
+
+		return [{ json: { success: true, message: 'Sale deleted successfully', saleId } }];
+	}
+
+	private async handleGetColumns(
+		context: IExecuteFunctions,
+		apiService: NextLeadApiService,
+	): Promise<INodeExecutionData[]> {
+		const response = await apiService.getSalesColumns(context);
+
+		if (!response.success) {
+			throw new Error(`Failed to get sale columns: ${response.error}`);
+		}
+
+		if (Array.isArray(response.data)) {
+			return response.data.map(column => ({ json: column }));
+		}
+
+		return [{ json: response.data }];
 	}
 }

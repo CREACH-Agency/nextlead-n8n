@@ -1,7 +1,8 @@
 import { IExecuteFunctions, INodeExecutionData, INodeProperties } from 'n8n-workflow';
 
-import { ResourceType, OperationType } from '../core/types/NextLeadTypes';
+import { ResourceType, OperationType, NextLeadCredentials } from '../core/types/NextLeadTypes';
 import { IResourceStrategy } from '../core/interfaces/IResourceStrategy';
+import { NextLeadApiService } from '../core/NextLeadApiService';
 
 export class ListResource implements IResourceStrategy {
 	getResourceType(): ResourceType {
@@ -42,11 +43,31 @@ export class ListResource implements IResourceStrategy {
 		context: IExecuteFunctions,
 		itemIndex: number,
 	): Promise<INodeExecutionData[]> {
+		const credentials = await context.getCredentials('nextLeadApi') as NextLeadCredentials;
+		const apiService = new NextLeadApiService(credentials);
+
 		switch (operation) {
 			case 'getMany':
-				return [{ json: { message: 'List getMany operation - TODO' } }];
+				return this.handleGetManyLists(context, apiService);
 			default:
 				throw new Error(`Unknown operation: ${operation}`);
 		}
+	}
+
+	private async handleGetManyLists(
+		context: IExecuteFunctions,
+		apiService: NextLeadApiService,
+	): Promise<INodeExecutionData[]> {
+		const response = await apiService.getLists(context);
+
+		if (!response.success) {
+			throw new Error(`Failed to get lists: ${response.error}`);
+		}
+
+		if (Array.isArray(response.data)) {
+			return response.data.map(list => ({ json: list }));
+		}
+
+		return [{ json: response.data }];
 	}
 }
