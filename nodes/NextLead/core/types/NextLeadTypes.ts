@@ -3,28 +3,28 @@ import { IDataObject } from 'n8n-workflow';
 export type NextLeadCredentials = {
 	domain: string;
 	apiKey: string;
-}
+};
 
 export type RequestConfig = {
 	method: 'GET' | 'POST' | 'PUT' | 'DELETE';
 	endpoint: string;
 	data?: IDataObject;
 	queryParams?: IDataObject;
-}
+};
 
 export type NextLeadApiResponse = {
 	success: boolean;
 	data?: any;
 	error?: string;
 	message?: string;
-}
+};
 
 export type ResourceOperation = {
 	name: string;
 	value: string;
 	description: string;
 	action: string;
-}
+};
 
 export type ContactData = {
 	firstName: string;
@@ -38,7 +38,7 @@ export type ContactData = {
 	lists?: string;
 	users?: string;
 	customFieldValues?: any;
-}
+};
 
 export type StructureData = {
 	name: string;
@@ -50,7 +50,7 @@ export type StructureData = {
 	postalCode?: string;
 	siret?: string;
 	website?: string;
-}
+};
 
 export type SaleData = {
 	contactId: string;
@@ -60,7 +60,7 @@ export type SaleData = {
 	probability?: number;
 	closeDate?: string;
 	description?: string;
-}
+};
 
 export type ActionData = {
 	contactId: string;
@@ -70,7 +70,16 @@ export type ActionData = {
 	dueDate?: string;
 	priority?: string;
 	status?: string;
-}
+};
 
 export type ResourceType = 'contact' | 'structure' | 'sale' | 'action' | 'list';
-export type OperationType = 'create' | 'update' | 'delete' | 'get' | 'getAll' | 'getTeam' | 'getConversion' | 'getCustomFields' | 'getColumns';
+export type OperationType =
+	| 'create'
+	| 'update'
+	| 'delete'
+	| 'get'
+	| 'getMany'
+	| 'getTeam'
+	| 'getConversion'
+	| 'getCustomFields'
+	| 'getColumns';

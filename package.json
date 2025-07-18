@@ -36,11 +36,7 @@
       "dist/credentials/NextLeadApi.credentials.js"
     ],
     "nodes": [
-      "dist/nodes/NextLead/NextLeadContact/NextLeadContact.node.js",
-      "dist/nodes/NextLead/NextLeadStructure/NextLeadStructure.node.js",
-      "dist/nodes/NextLead/NextLeadSale/NextLeadSale.node.js",
-      "dist/nodes/NextLead/NextLeadAction/NextLeadAction.node.js",
-      "dist/nodes/NextLead/NextLeadList/NextLeadList.node.js"
+      "dist/nodes/NextLead/NextLead.node.js"
     ]
   },
   "devDependencies": {
