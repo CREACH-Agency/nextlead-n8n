@@ -177,7 +177,7 @@ export class StructureResource implements IResourceStrategy {
 		context: IExecuteFunctions,
 		itemIndex: number,
 	): Promise<INodeExecutionData[]> {
-		const credentials = await context.getCredentials('nextLeadApi') as NextLeadCredentials;
+		const credentials = (await context.getCredentials('nextLeadApi')) as NextLeadCredentials;
 		const apiService = new NextLeadApiService(credentials);
 
 		switch (operation) {
@@ -200,7 +200,11 @@ export class StructureResource implements IResourceStrategy {
 		apiService: NextLeadApiService,
 	): Promise<INodeExecutionData[]> {
 		const name = context.getNodeParameter('name', itemIndex) as string;
-		const additionalFields = context.getNodeParameter('additionalFields', itemIndex, {}) as IDataObject;
+		const additionalFields = context.getNodeParameter(
+			'additionalFields',
+			itemIndex,
+			{},
+		) as IDataObject;
 
 		const structureData: IDataObject = {
 			name,
@@ -265,7 +269,7 @@ export class StructureResource implements IResourceStrategy {
 		}
 
 		if (Array.isArray(response.data)) {
-			return response.data.map(structure => ({ json: structure }));
+			return response.data.map((structure) => ({ json: structure }));
 		}
 
 		return [{ json: response.data }];

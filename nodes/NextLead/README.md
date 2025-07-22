@@ -15,27 +15,34 @@ The package follows a modular architecture with separate nodes for each resource
 ## Core Services
 
 ### NextLeadApiService
+
 Central service for all API communications with NextLead. Handles authentication, request building, and response processing.
 
 ### BaseNextLeadNode
+
 Abstract base class providing common functionality for all NextLead nodes:
+
 - API service initialization
 - Error handling
 - Response processing
 - Common node structure
 
 ### NextLeadErrorHandler
+
 Centralized error handling with proper error types and user-friendly messages.
 
 ## Utilities
 
 ### FieldDefinitionUtils
+
 Utility class for creating consistent field definitions across all nodes with proper TypeScript typing.
 
 ### OperationHandlerUtils
+
 Standardized operation handlers for common CRUD operations (create, update, delete, find).
 
 ### NodeExecuteUtils
+
 Execution utilities that provide a standardized flow for node execution with service injection.
 
 ## Usage
@@ -51,6 +58,7 @@ For detailed API documentation, visit: https://dashboard.nextlead.app/en/api-doc
 ## Node Structure
 
 Each node follows the Single Responsibility Principle:
+
 - One node per resource type
 - Clear separation of concerns
 - Reusable core services and utilities

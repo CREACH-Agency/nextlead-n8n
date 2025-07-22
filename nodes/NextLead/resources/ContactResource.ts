@@ -186,7 +186,7 @@ export class ContactResource implements IResourceStrategy {
 		context: IExecuteFunctions,
 		itemIndex: number,
 	): Promise<INodeExecutionData[]> {
-		const credentials = await context.getCredentials('nextLeadApi') as NextLeadCredentials;
+		const credentials = (await context.getCredentials('nextLeadApi')) as NextLeadCredentials;
 		const apiService = new NextLeadApiService(credentials);
 
 		switch (operation) {
@@ -219,7 +219,11 @@ export class ContactResource implements IResourceStrategy {
 		const email = context.getNodeParameter('email', itemIndex) as string;
 		const firstName = context.getNodeParameter('firstName', itemIndex, '') as string;
 		const lastName = context.getNodeParameter('lastName', itemIndex, '') as string;
-		const additionalFields = context.getNodeParameter('additionalFields', itemIndex, {}) as IDataObject;
+		const additionalFields = context.getNodeParameter(
+			'additionalFields',
+			itemIndex,
+			{},
+		) as IDataObject;
 
 		const contactData: IDataObject = {
 			email,
@@ -305,7 +309,7 @@ export class ContactResource implements IResourceStrategy {
 		}
 
 		if (Array.isArray(response.data)) {
-			return response.data.map(contact => ({ json: contact }));
+			return response.data.map((contact) => ({ json: contact }));
 		}
 
 		return [{ json: response.data }];
@@ -322,7 +326,7 @@ export class ContactResource implements IResourceStrategy {
 		}
 
 		if (Array.isArray(response.data)) {
-			return response.data.map(member => ({ json: member }));
+			return response.data.map((member) => ({ json: member }));
 		}
 
 		return [{ json: response.data }];
@@ -339,7 +343,7 @@ export class ContactResource implements IResourceStrategy {
 		}
 
 		if (Array.isArray(response.data)) {
-			return response.data.map(status => ({ json: status }));
+			return response.data.map((status) => ({ json: status }));
 		}
 
 		return [{ json: response.data }];
@@ -356,7 +360,7 @@ export class ContactResource implements IResourceStrategy {
 		}
 
 		if (Array.isArray(response.data)) {
-			return response.data.map(field => ({ json: field }));
+			return response.data.map((field) => ({ json: field }));
 		}
 
 		return [{ json: response.data }];

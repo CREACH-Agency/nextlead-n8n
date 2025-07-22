@@ -43,7 +43,7 @@ export class ListResource implements IResourceStrategy {
 		context: IExecuteFunctions,
 		itemIndex: number,
 	): Promise<INodeExecutionData[]> {
-		const credentials = await context.getCredentials('nextLeadApi') as NextLeadCredentials;
+		const credentials = (await context.getCredentials('nextLeadApi')) as NextLeadCredentials;
 		const apiService = new NextLeadApiService(credentials);
 
 		switch (operation) {
@@ -65,7 +65,7 @@ export class ListResource implements IResourceStrategy {
 		}
 
 		if (Array.isArray(response.data)) {
-			return response.data.map(list => ({ json: list }));
+			return response.data.map((list) => ({ json: list }));
 		}
 
 		return [{ json: response.data }];

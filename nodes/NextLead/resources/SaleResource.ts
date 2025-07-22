@@ -199,7 +199,7 @@ export class SaleResource implements IResourceStrategy {
 		context: IExecuteFunctions,
 		itemIndex: number,
 	): Promise<INodeExecutionData[]> {
-		const credentials = await context.getCredentials('nextLeadApi') as NextLeadCredentials;
+		const credentials = (await context.getCredentials('nextLeadApi')) as NextLeadCredentials;
 		const apiService = new NextLeadApiService(credentials);
 
 		switch (operation) {
@@ -228,7 +228,11 @@ export class SaleResource implements IResourceStrategy {
 		const contactId = context.getNodeParameter('contactId', itemIndex) as string;
 		const columnId = context.getNodeParameter('columnId', itemIndex) as string;
 		const name = context.getNodeParameter('name', itemIndex) as string;
-		const additionalFields = context.getNodeParameter('additionalFields', itemIndex, {}) as IDataObject;
+		const additionalFields = context.getNodeParameter(
+			'additionalFields',
+			itemIndex,
+			{},
+		) as IDataObject;
 
 		const saleData: IDataObject = {
 			contactId,
@@ -295,7 +299,7 @@ export class SaleResource implements IResourceStrategy {
 		}
 
 		if (Array.isArray(response.data)) {
-			return response.data.map(column => ({ json: column }));
+			return response.data.map((column) => ({ json: column }));
 		}
 
 		return [{ json: response.data }];

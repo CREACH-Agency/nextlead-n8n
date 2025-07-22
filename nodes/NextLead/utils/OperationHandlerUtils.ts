@@ -1,8 +1,4 @@
-import {
-	IExecuteFunctions,
-	IDataObject,
-	NodeOperationError,
-} from 'n8n-workflow';
+import { IExecuteFunctions, IDataObject, NodeOperationError } from 'n8n-workflow';
 
 export interface IApiService {
 	[key: string]: (context: IExecuteFunctions, ...args: any[]) => Promise<any>;
@@ -39,7 +35,7 @@ export class OperationHandlerUtils {
 		context: IExecuteFunctions,
 		itemIndex: number,
 		apiService: IApiService,
-		config: ICreateOperationConfig
+		config: ICreateOperationConfig,
 	): Promise<any> {
 		const data: IDataObject = {};
 
@@ -47,10 +43,7 @@ export class OperationHandlerUtils {
 		for (const param of config.requiredParams) {
 			const value = context.getNodeParameter(param, itemIndex) as string;
 			if (!value) {
-				throw new NodeOperationError(
-					context.getNode(),
-					`Required parameter '${param}' is missing`
-				);
+				throw new NodeOperationError(context.getNode(), `Required parameter '${param}' is missing`);
 			}
 			data[param] = value;
 		}
@@ -59,7 +52,7 @@ export class OperationHandlerUtils {
 		if (config.additionalFieldsParam) {
 			const additionalFields = context.getNodeParameter(
 				config.additionalFieldsParam,
-				itemIndex
+				itemIndex,
 			) as IDataObject;
 			Object.assign(data, additionalFields);
 		}
@@ -74,31 +67,28 @@ export class OperationHandlerUtils {
 			}
 		}
 
-		return this.executeApiCall(
+		return this.executeApiCall(context, apiService, config.apiMethodName, config.operationName, [
 			context,
-			apiService,
-			config.apiMethodName,
-			config.operationName,
-			[context, data]
-		);
+			data,
+		]);
 	}
 
 	static async handleUpdateOperation(
 		context: IExecuteFunctions,
 		itemIndex: number,
 		apiService: IApiService,
-		config: IUpdateOperationConfig
+		config: IUpdateOperationConfig,
 	): Promise<any> {
 		const id = context.getNodeParameter(config.idParam, itemIndex) as string;
 		const updateFields = context.getNodeParameter(
 			config.updateFieldsParam,
-			itemIndex
+			itemIndex,
 		) as IDataObject;
 
 		if (!id) {
 			throw new NodeOperationError(
 				context.getNode(),
-				`Required parameter '${config.idParam}' is missing`
+				`Required parameter '${config.idParam}' is missing`,
 			);
 		}
 
@@ -107,44 +97,38 @@ export class OperationHandlerUtils {
 			...updateFields,
 		};
 
-		return this.executeApiCall(
+		return this.executeApiCall(context, apiService, config.apiMethodName, config.operationName, [
 			context,
-			apiService,
-			config.apiMethodName,
-			config.operationName,
-			[context, data]
-		);
+			data,
+		]);
 	}
 
 	static async handleDeleteOperation(
 		context: IExecuteFunctions,
 		itemIndex: number,
 		apiService: IApiService,
-		config: IDeleteOperationConfig
+		config: IDeleteOperationConfig,
 	): Promise<any> {
 		const id = context.getNodeParameter(config.idParam, itemIndex) as string;
 
 		if (!id) {
 			throw new NodeOperationError(
 				context.getNode(),
-				`Required parameter '${config.idParam}' is missing`
+				`Required parameter '${config.idParam}' is missing`,
 			);
 		}
 
-		return this.executeApiCall(
+		return this.executeApiCall(context, apiService, config.apiMethodName, config.operationName, [
 			context,
-			apiService,
-			config.apiMethodName,
-			config.operationName,
-			[context, id]
-		);
+			id,
+		]);
 	}
 
 	static async handleFindOperation(
 		context: IExecuteFunctions,
 		itemIndex: number,
 		apiService: IApiService,
-		config: IFindOperationConfig
+		config: IFindOperationConfig,
 	): Promise<any> {
 		const searchBy = context.getNodeParameter(config.searchByParam, itemIndex) as string;
 		const searchValue = context.getNodeParameter(config.searchValueParam, itemIndex) as string;
@@ -152,7 +136,7 @@ export class OperationHandlerUtils {
 		if (!searchBy || !searchValue) {
 			throw new NodeOperationError(
 				context.getNode(),
-				`Required parameters '${config.searchByParam}' and '${config.searchValueParam}' are missing`
+				`Required parameters '${config.searchByParam}' and '${config.searchValueParam}' are missing`,
 			);
 		}
 
@@ -160,27 +144,20 @@ export class OperationHandlerUtils {
 			[searchBy]: searchValue,
 		};
 
-		return this.executeApiCall(
+		return this.executeApiCall(context, apiService, config.apiMethodName, config.operationName, [
 			context,
-			apiService,
-			config.apiMethodName,
-			config.operationName,
-			[context, searchData]
-		);
+			searchData,
+		]);
 	}
 
 	static async handleGetOperation(
 		context: IExecuteFunctions,
 		apiService: IApiService,
-		config: IOperationConfig
+		config: IOperationConfig,
 	): Promise<any> {
-		return this.executeApiCall(
+		return this.executeApiCall(context, apiService, config.apiMethodName, config.operationName, [
 			context,
-			apiService,
-			config.apiMethodName,
-			config.operationName,
-			[context]
-		);
+		]);
 	}
 
 	static async executeApiCall(
@@ -188,24 +165,21 @@ export class OperationHandlerUtils {
 		apiService: IApiService,
 		methodName: string,
 		operationName: string,
-		args: [IExecuteFunctions, ...any[]]
+		args: [IExecuteFunctions, ...any[]],
 	): Promise<any> {
 		const method = apiService[methodName];
-		
+
 		if (!method || typeof method !== 'function') {
-			throw new NodeOperationError(
-				context.getNode(),
-				`API method '${methodName}' not found`
-			);
+			throw new NodeOperationError(context.getNode(), `API method '${methodName}' not found`);
 		}
 
 		try {
 			const response = await method.apply(apiService, args);
-			
+
 			if (!response || !response.success) {
 				throw new NodeOperationError(
 					context.getNode(),
-					response?.error || `${operationName} failed`
+					response?.error || `${operationName} failed`,
 				);
 			}
 
@@ -214,16 +188,13 @@ export class OperationHandlerUtils {
 			if (error instanceof NodeOperationError) {
 				throw error;
 			}
-			throw new NodeOperationError(
-				context.getNode(),
-				`${operationName} failed: ${error.message}`
-			);
+			throw new NodeOperationError(context.getNode(), `${operationName} failed: ${error.message}`);
 		}
 	}
 
 	static buildDataObject(params: { [key: string]: any }): IDataObject {
 		const data: IDataObject = {};
-		
+
 		for (const [key, value] of Object.entries(params)) {
 			if (value !== undefined && value !== null && value !== '') {
 				data[key] = value;
@@ -236,15 +207,12 @@ export class OperationHandlerUtils {
 	static validateRequiredParams(
 		context: IExecuteFunctions,
 		params: string[],
-		itemIndex: number
+		itemIndex: number,
 	): void {
 		for (const param of params) {
 			const value = context.getNodeParameter(param, itemIndex);
 			if (!value) {
-				throw new NodeOperationError(
-					context.getNode(),
-					`Required parameter '${param}' is missing`
-				);
+				throw new NodeOperationError(context.getNode(), `Required parameter '${param}' is missing`);
 			}
 		}
 	}
@@ -252,10 +220,10 @@ export class OperationHandlerUtils {
 	static extractParameters(
 		context: IExecuteFunctions,
 		itemIndex: number,
-		paramNames: string[]
+		paramNames: string[],
 	): IDataObject {
 		const params: IDataObject = {};
-		
+
 		for (const paramName of paramNames) {
 			const value = context.getNodeParameter(paramName, itemIndex);
 			if (value !== undefined) {

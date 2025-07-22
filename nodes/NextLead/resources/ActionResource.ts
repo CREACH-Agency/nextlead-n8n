@@ -199,7 +199,7 @@ export class ActionResource implements IResourceStrategy {
 		context: IExecuteFunctions,
 		itemIndex: number,
 	): Promise<INodeExecutionData[]> {
-		const credentials = await context.getCredentials('nextLeadApi') as NextLeadCredentials;
+		const credentials = (await context.getCredentials('nextLeadApi')) as NextLeadCredentials;
 		const apiService = new NextLeadApiService(credentials);
 
 		switch (operation) {
@@ -228,7 +228,11 @@ export class ActionResource implements IResourceStrategy {
 		const column = context.getNodeParameter('column', itemIndex) as string;
 		const title = context.getNodeParameter('title', itemIndex, '') as string;
 		const assign_contact = context.getNodeParameter('assign_contact', itemIndex, '') as string;
-		const additionalFields = context.getNodeParameter('additionalFields', itemIndex, {}) as IDataObject;
+		const additionalFields = context.getNodeParameter(
+			'additionalFields',
+			itemIndex,
+			{},
+		) as IDataObject;
 
 		const actionData: IDataObject = {
 			column,
@@ -312,7 +316,7 @@ export class ActionResource implements IResourceStrategy {
 
 		// Si c'est un array, retourner chaque colonne comme une ligne séparée
 		if (Array.isArray(response.data)) {
-			return response.data.map(column => ({ json: column }));
+			return response.data.map((column) => ({ json: column }));
 		}
 
 		return [{ json: response.data }];

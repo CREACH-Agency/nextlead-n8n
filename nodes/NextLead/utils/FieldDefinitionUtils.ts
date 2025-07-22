@@ -84,7 +84,7 @@ export class FieldDefinitionUtils {
 					operation: config.operations,
 				},
 			},
-			options: config.fields.map(field => ({
+			options: config.fields.map((field) => ({
 				default: '',
 				displayName: field.displayName,
 				name: field.name,
@@ -96,7 +96,9 @@ export class FieldDefinitionUtils {
 		};
 	}
 
-	static createNumberField(config: IFieldConfig & { operations: string[]; min?: number; max?: number; precision?: number }): INodeProperties {
+	static createNumberField(
+		config: IFieldConfig & { operations: string[]; min?: number; max?: number; precision?: number },
+	): INodeProperties {
 		return {
 			displayName: config.displayName,
 			name: config.name,
@@ -109,13 +111,15 @@ export class FieldDefinitionUtils {
 			},
 			default: 0,
 			description: config.description,
-			...(config.min !== undefined || config.max !== undefined || config.precision !== undefined) && {
+			...((config.min !== undefined ||
+				config.max !== undefined ||
+				config.precision !== undefined) && {
 				typeOptions: {
 					...(config.precision !== undefined && { numberPrecision: config.precision }),
 					...(config.min !== undefined && { minValue: config.min }),
 					...(config.max !== undefined && { maxValue: config.max }),
 				},
-			},
+			}),
 		};
 	}
 
@@ -135,7 +139,9 @@ export class FieldDefinitionUtils {
 		};
 	}
 
-	static createTextAreaField(config: IFieldConfig & { operations: string[]; rows?: number }): INodeProperties {
+	static createTextAreaField(
+		config: IFieldConfig & { operations: string[]; rows?: number },
+	): INodeProperties {
 		return {
 			displayName: config.displayName,
 			name: config.name,
@@ -154,7 +160,12 @@ export class FieldDefinitionUtils {
 		};
 	}
 
-	static createOptionsField(config: IFieldConfig & { operations: string[]; options: Array<{ name: string; value: string; description?: string; action?: string }> }): INodeProperties {
+	static createOptionsField(
+		config: IFieldConfig & {
+			operations: string[];
+			options: Array<{ name: string; value: string; description?: string; action?: string }>;
+		},
+	): INodeProperties {
 		return {
 			displayName: config.displayName,
 			name: config.name,
@@ -165,7 +176,7 @@ export class FieldDefinitionUtils {
 					operation: config.operations,
 				},
 			},
-			options: config.options.map(option => ({
+			options: config.options.map((option) => ({
 				name: option.name,
 				value: option.value,
 				description: option.description,

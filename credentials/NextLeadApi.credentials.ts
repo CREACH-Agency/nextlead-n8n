@@ -19,7 +19,8 @@ export class NextLeadApi implements ICredentialType {
 			},
 			default: '',
 			required: true,
-			description: 'The API key for authentication. Get it from your NextLead dashboard under Settings > Automation > API Key.',
+			description:
+				'The API key for authentication. Get it from your NextLead dashboard under Settings > Automation > API Key.',
 		},
 		{
 			displayName: 'Domain',

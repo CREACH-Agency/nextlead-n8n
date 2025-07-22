@@ -13,7 +13,7 @@ export interface INodeExecuteContext {
 		context: IExecuteFunctions,
 		operation: OperationType,
 		itemIndex: number,
-		apiService: any
+		apiService: any,
 	): Promise<any>;
 }
 
@@ -25,12 +25,14 @@ export class NodeExecuteUtils {
 	static async executeStandardFlow(
 		context: IExecuteFunctions,
 		nodeInstance: INodeExecuteContext,
-		options?: IExecuteOptions
+		options?: IExecuteOptions,
 	): Promise<INodeExecutionData[][]> {
 		const items = context.getInputData();
 		const returnData: IDataObject[] = [];
 
-		const credentials = await context.getCredentials('nextLeadApi') as ICredentialDataDecryptedObject;
+		const credentials = (await context.getCredentials(
+			'nextLeadApi',
+		)) as ICredentialDataDecryptedObject;
 		const { NextLeadApiService } = await import('../core/NextLeadApiService');
 		const apiService = new NextLeadApiService(credentials as any);
 
@@ -41,13 +43,11 @@ export class NodeExecuteUtils {
 					context,
 					operation,
 					i,
-					apiService
+					apiService,
 				);
 
 				if (result) {
-					const processedResult = Array.isArray(result) 
-						? result 
-						: [result as IDataObject];
+					const processedResult = Array.isArray(result) ? result : [result as IDataObject];
 					returnData.push(...processedResult);
 				}
 			} catch (error: any) {
@@ -69,15 +69,12 @@ export class NodeExecuteUtils {
 	static async executeOperationSafely<T>(
 		context: IExecuteFunctions,
 		operation: () => Promise<T>,
-		operationName: string
+		operationName: string,
 	): Promise<T> {
 		try {
 			return await operation();
 		} catch (error: any) {
-			throw new NodeOperationError(
-				context.getNode(),
-				`${operationName} failed: ${error.message}`
-			);
+			throw new NodeOperationError(context.getNode(), `${operationName} failed: ${error.message}`);
 		}
 	}
 
@@ -87,7 +84,7 @@ export class NodeExecuteUtils {
 		}
 
 		if (Array.isArray(response)) {
-			return response.map(item => item as IDataObject);
+			return response.map((item) => item as IDataObject);
 		}
 
 		return [response as IDataObject];
