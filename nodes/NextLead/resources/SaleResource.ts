@@ -167,10 +167,10 @@ export class SaleResource implements IResourceStrategy {
 			}),
 
 			// Delete fields
-			FieldDefinitionUtils.createIdField({
-				name: 'saleId',
-				displayName: 'Sale ID',
-				description: 'ID of the sale to delete',
+			FieldDefinitionUtils.createEmailField({
+				name: 'contactEmail',
+				displayName: 'Contact Email',
+				description: 'Email of the contact whose sale to delete',
 				operations: ['delete'],
 			}),
 
@@ -273,15 +273,15 @@ export class SaleResource implements IResourceStrategy {
 		itemIndex: number,
 		apiService: NextLeadApiService,
 	): Promise<INodeExecutionData[]> {
-		const saleId = context.getNodeParameter('saleId', itemIndex) as string;
+		const contactEmail = context.getNodeParameter('contactEmail', itemIndex) as string;
 
-		const response = await apiService.deleteSale(context, saleId);
+		const response = await apiService.deleteSale(context, contactEmail);
 
 		if (!response.success) {
 			throw new Error(`Failed to delete sale: ${response.error}`);
 		}
 
-		return [{ json: { success: true, message: 'Sale deleted successfully', saleId } }];
+		return [{ json: { success: true, message: 'Sale deleted successfully', contactEmail } }];
 	}
 
 	private async handleGetColumns(

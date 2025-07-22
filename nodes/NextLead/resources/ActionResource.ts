@@ -167,10 +167,10 @@ export class ActionResource implements IResourceStrategy {
 			}),
 
 			// Delete fields
-			FieldDefinitionUtils.createIdField({
-				name: 'actionId',
-				displayName: 'Action ID',
-				description: 'ID of the action to delete',
+			FieldDefinitionUtils.createEmailField({
+				name: 'contactEmail',
+				displayName: 'Contact Email',
+				description: 'Email of the contact whose action to delete',
 				operations: ['delete'],
 			}),
 
@@ -271,15 +271,15 @@ export class ActionResource implements IResourceStrategy {
 		itemIndex: number,
 		apiService: NextLeadApiService,
 	): Promise<INodeExecutionData[]> {
-		const actionId = context.getNodeParameter('actionId', itemIndex) as string;
+		const contactEmail = context.getNodeParameter('contactEmail', itemIndex) as string;
 
-		const response = await apiService.deleteAction(context, actionId);
+		const response = await apiService.deleteAction(context, contactEmail);
 
 		if (!response.success) {
 			throw new Error(`Failed to delete action: ${response.error}`);
 		}
 
-		return [{ json: { success: true, message: 'Action deleted successfully', actionId } }];
+		return [{ json: { success: true, message: 'Action deleted successfully', contactEmail } }];
 	}
 
 	private async handleGetAction(

@@ -149,11 +149,11 @@ export class NextLeadApiService {
 		});
 	}
 
-	async deleteSale(context: IExecuteFunctions, saleId: string): Promise<NextLeadApiResponse> {
+	async deleteSale(context: IExecuteFunctions, contactEmail: string): Promise<NextLeadApiResponse> {
 		return this.makeRequest(context, {
 			method: 'DELETE',
 			endpoint: '/api/v2/receive/sales/delete-sale',
-			queryParams: { id: saleId },
+			data: { contact_email: contactEmail },
 		});
 	}
 
@@ -180,11 +180,11 @@ export class NextLeadApiService {
 		});
 	}
 
-	async deleteAction(context: IExecuteFunctions, actionId: string): Promise<NextLeadApiResponse> {
+	async deleteAction(context: IExecuteFunctions, contactEmail: string): Promise<NextLeadApiResponse> {
 		return this.makeRequest(context, {
-			method: 'POST',
+			method: 'DELETE',
 			endpoint: '/api/v2/receive/actions/delete-action',
-			data: { id: actionId },
+			data: { contact_email: contactEmail },
 		});
 	}
 
