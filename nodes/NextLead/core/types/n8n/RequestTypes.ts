@@ -17,6 +17,6 @@ export interface RequestConfig {
 }
 
 export interface NextLeadCredentials {
-	domain: string;
 	apiKey: string;
+	domain: string;
 }

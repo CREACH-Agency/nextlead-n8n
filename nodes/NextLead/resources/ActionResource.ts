@@ -4,6 +4,7 @@ import { ResourceType, OperationType, NextLeadCredentials } from '../core/types/
 import { IResourceStrategy } from '../core/interfaces/IResourceStrategy';
 import { FieldDefinitionUtils } from '../utils/FieldDefinitionUtils';
 import { NextLeadApiService } from '../core/NextLeadApiService';
+import { ResponseUtils } from '../utils/ResponseUtils';
 
 export class ActionResource implements IResourceStrategy {
 	getResourceType(): ResourceType {
@@ -243,11 +244,7 @@ export class ActionResource implements IResourceStrategy {
 
 		const response = await apiService.createAction(context, actionData);
 
-		if (!response.success) {
-			throw new Error(`Failed to create action: ${response.error}`);
-		}
-
-		return [{ json: response.data }];
+		return ResponseUtils.formatSingleResponse(response);
 	}
 
 	private async handleUpdateAction(
@@ -263,11 +260,7 @@ export class ActionResource implements IResourceStrategy {
 
 		const response = await apiService.updateAction(context, updateData);
 
-		if (!response.success) {
-			throw new Error(`Failed to update action: ${response.error}`);
-		}
-
-		return [{ json: response.data }];
+		return ResponseUtils.formatSingleResponse(response);
 	}
 
 	private async handleDeleteAction(
@@ -277,13 +270,11 @@ export class ActionResource implements IResourceStrategy {
 	): Promise<INodeExecutionData[]> {
 		const contactEmail = context.getNodeParameter('contactEmail', itemIndex) as string;
 
-		const response = await apiService.deleteAction(context, contactEmail);
+		await apiService.deleteAction(context, contactEmail);
 
-		if (!response.success) {
-			throw new Error(`Failed to delete action: ${response.error}`);
-		}
-
-		return [{ json: { success: true, message: 'Action deleted successfully', contactEmail } }];
+		return ResponseUtils.formatSuccessResponse(
+			`Action deleted successfully for contact: ${contactEmail}`,
+		);
 	}
 
 	private async handleGetAction(
@@ -310,15 +301,6 @@ export class ActionResource implements IResourceStrategy {
 	): Promise<INodeExecutionData[]> {
 		const response = await apiService.getActionsColumns(context);
 
-		if (!response.success) {
-			throw new Error(`Failed to get action columns: ${response.error}`);
-		}
-
-		// Si c'est un array, retourner chaque colonne comme une ligne séparée
-		if (Array.isArray(response.data)) {
-			return response.data.map((column) => ({ json: column }));
-		}
-
-		return [{ json: response.data }];
+		return ResponseUtils.formatArrayResponse(response);
 	}
 }

@@ -3,6 +3,7 @@ import { IExecuteFunctions, INodeExecutionData, INodeProperties } from 'n8n-work
 import { ResourceType, OperationType, NextLeadCredentials } from '../core/types/NextLeadTypes';
 import { IResourceStrategy } from '../core/interfaces/IResourceStrategy';
 import { NextLeadApiService } from '../core/NextLeadApiService';
+import { ResponseUtils } from '../utils/ResponseUtils';
 
 export class ListResource implements IResourceStrategy {
 	getResourceType(): ResourceType {
@@ -60,14 +61,6 @@ export class ListResource implements IResourceStrategy {
 	): Promise<INodeExecutionData[]> {
 		const response = await apiService.getLists(context);
 
-		if (!response.success) {
-			throw new Error(`Failed to get lists: ${response.error}`);
-		}
-
-		if (Array.isArray(response.data)) {
-			return response.data.map((list) => ({ json: list }));
-		}
-
-		return [{ json: response.data }];
+		return ResponseUtils.formatArrayResponse(response);
 	}
 }

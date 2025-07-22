@@ -4,6 +4,7 @@ import { ResourceType, OperationType, NextLeadCredentials } from '../core/types/
 import { IResourceStrategy } from '../core/interfaces/IResourceStrategy';
 import { FieldDefinitionUtils } from '../utils/FieldDefinitionUtils';
 import { NextLeadApiService } from '../core/NextLeadApiService';
+import { ResponseUtils } from '../utils/ResponseUtils';
 
 export class StructureResource implements IResourceStrategy {
 	getResourceType(): ResourceType {
@@ -213,11 +214,7 @@ export class StructureResource implements IResourceStrategy {
 
 		const response = await apiService.createStructure(context, structureData);
 
-		if (!response.success) {
-			throw new Error(`Failed to create structure: ${response.error}`);
-		}
-
-		return [{ json: response.data }];
+		return ResponseUtils.formatSingleResponse(response);
 	}
 
 	private async handleUpdateStructure(
@@ -235,11 +232,7 @@ export class StructureResource implements IResourceStrategy {
 
 		const response = await apiService.updateStructure(context, updateData);
 
-		if (!response.success) {
-			throw new Error(`Failed to update structure: ${response.error}`);
-		}
-
-		return [{ json: response.data }];
+		return ResponseUtils.formatSingleResponse(response);
 	}
 
 	private async handleDeleteStructure(
@@ -249,13 +242,9 @@ export class StructureResource implements IResourceStrategy {
 	): Promise<INodeExecutionData[]> {
 		const structureId = context.getNodeParameter('structureId', itemIndex) as string;
 
-		const response = await apiService.deleteStructure(context, structureId);
+		await apiService.deleteStructure(context, structureId);
 
-		if (!response.success) {
-			throw new Error(`Failed to delete structure: ${response.error}`);
-		}
-
-		return [{ json: { success: true, message: 'Structure deleted successfully', structureId } }];
+		return ResponseUtils.formatSuccessResponse(`Structure deleted successfully: ${structureId}`);
 	}
 
 	private async handleGetManyStructures(
@@ -264,14 +253,6 @@ export class StructureResource implements IResourceStrategy {
 	): Promise<INodeExecutionData[]> {
 		const response = await apiService.getStructures(context);
 
-		if (!response.success) {
-			throw new Error(`Failed to get structures: ${response.error}`);
-		}
-
-		if (Array.isArray(response.data)) {
-			return response.data.map((structure) => ({ json: structure }));
-		}
-
-		return [{ json: response.data }];
+		return ResponseUtils.formatArrayResponse(response);
 	}
 }

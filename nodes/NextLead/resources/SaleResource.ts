@@ -4,6 +4,7 @@ import { ResourceType, OperationType, NextLeadCredentials } from '../core/types/
 import { IResourceStrategy } from '../core/interfaces/IResourceStrategy';
 import { FieldDefinitionUtils } from '../utils/FieldDefinitionUtils';
 import { NextLeadApiService } from '../core/NextLeadApiService';
+import { ResponseUtils } from '../utils/ResponseUtils';
 
 export class SaleResource implements IResourceStrategy {
 	getResourceType(): ResourceType {
@@ -243,11 +244,7 @@ export class SaleResource implements IResourceStrategy {
 
 		const response = await apiService.createSale(context, saleData);
 
-		if (!response.success) {
-			throw new Error(`Failed to create sale: ${response.error}`);
-		}
-
-		return [{ json: response.data }];
+		return ResponseUtils.formatSingleResponse(response);
 	}
 
 	private async handleUpdateSale(
@@ -265,11 +262,7 @@ export class SaleResource implements IResourceStrategy {
 
 		const response = await apiService.updateSale(context, updateData);
 
-		if (!response.success) {
-			throw new Error(`Failed to update sale: ${response.error}`);
-		}
-
-		return [{ json: response.data }];
+		return ResponseUtils.formatSingleResponse(response);
 	}
 
 	private async handleDeleteSale(
@@ -279,13 +272,11 @@ export class SaleResource implements IResourceStrategy {
 	): Promise<INodeExecutionData[]> {
 		const contactEmail = context.getNodeParameter('contactEmail', itemIndex) as string;
 
-		const response = await apiService.deleteSale(context, contactEmail);
+		await apiService.deleteSale(context, contactEmail);
 
-		if (!response.success) {
-			throw new Error(`Failed to delete sale: ${response.error}`);
-		}
-
-		return [{ json: { success: true, message: 'Sale deleted successfully', contactEmail } }];
+		return ResponseUtils.formatSuccessResponse(
+			`Sale deleted successfully for contact: ${contactEmail}`,
+		);
 	}
 
 	private async handleGetColumns(
@@ -294,14 +285,6 @@ export class SaleResource implements IResourceStrategy {
 	): Promise<INodeExecutionData[]> {
 		const response = await apiService.getSalesColumns(context);
 
-		if (!response.success) {
-			throw new Error(`Failed to get sale columns: ${response.error}`);
-		}
-
-		if (Array.isArray(response.data)) {
-			return response.data.map((column) => ({ json: column }));
-		}
-
-		return [{ json: response.data }];
+		return ResponseUtils.formatArrayResponse(response);
 	}
 }

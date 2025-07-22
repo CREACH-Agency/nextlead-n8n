@@ -27,7 +27,10 @@ export class NextLeadApi implements ICredentialType {
 			name: 'domain',
 			type: 'string',
 			default: 'https://dashboard.nextlead.app',
-			description: 'The domain to use for API requests',
+			placeholder: 'https://dashboard.nextlead.app',
+			description:
+				'The API domain. Use "http://localhost:3000" for local development or "https://dashboard.nextlead.app" for production.',
+			hint: 'For local development, use http://localhost:3000',
 		},
 	];
 

@@ -4,6 +4,7 @@ import { ResourceType, OperationType, NextLeadCredentials } from '../core/types/
 import { IResourceStrategy } from '../core/interfaces/IResourceStrategy';
 import { FieldDefinitionUtils } from '../utils/FieldDefinitionUtils';
 import { NextLeadApiService } from '../core/NextLeadApiService';
+import { ResponseUtils } from '../utils/ResponseUtils';
 
 export class ContactResource implements IResourceStrategy {
 	getResourceType(): ResourceType {
@@ -234,11 +235,7 @@ export class ContactResource implements IResourceStrategy {
 
 		const response = await apiService.createContact(context, contactData);
 
-		if (!response.success) {
-			throw new Error(`Failed to create contact: ${response.error}`);
-		}
-
-		return [{ json: response.data }];
+		return ResponseUtils.formatSingleResponse(response);
 	}
 
 	private async handleUpdateContact(
@@ -256,11 +253,7 @@ export class ContactResource implements IResourceStrategy {
 
 		const response = await apiService.updateContact(context, updateData);
 
-		if (!response.success) {
-			throw new Error(`Failed to update contact: ${response.error}`);
-		}
-
-		return [{ json: response.data }];
+		return ResponseUtils.formatSingleResponse(response);
 	}
 
 	private async handleDeleteContact(
@@ -270,13 +263,9 @@ export class ContactResource implements IResourceStrategy {
 	): Promise<INodeExecutionData[]> {
 		const contactId = context.getNodeParameter('contactId', itemIndex) as string;
 
-		const response = await apiService.deleteContact(context, contactId);
+		await apiService.deleteContact(context, contactId);
 
-		if (!response.success) {
-			throw new Error(`Failed to delete contact: ${response.error}`);
-		}
-
-		return [{ json: { success: true, message: 'Contact deleted successfully', contactId } }];
+		return ResponseUtils.formatSuccessResponse(`Contact deleted successfully: ${contactId}`);
 	}
 
 	private async handleGetContact(
@@ -288,11 +277,7 @@ export class ContactResource implements IResourceStrategy {
 
 		const response = await apiService.findContact(context, { id: contactId });
 
-		if (!response.success) {
-			throw new Error(`Failed to get contact: ${response.error}`);
-		}
-
-		return [{ json: response.data }];
+		return ResponseUtils.formatSingleResponse(response);
 	}
 
 	private async handleGetManyContacts(
@@ -304,15 +289,7 @@ export class ContactResource implements IResourceStrategy {
 
 		const response = await apiService.findContact(context, { limit });
 
-		if (!response.success) {
-			throw new Error(`Failed to get contacts: ${response.error}`);
-		}
-
-		if (Array.isArray(response.data)) {
-			return response.data.map((contact) => ({ json: contact }));
-		}
-
-		return [{ json: response.data }];
+		return ResponseUtils.formatArrayResponse(response);
 	}
 
 	private async handleGetTeam(
@@ -321,15 +298,7 @@ export class ContactResource implements IResourceStrategy {
 	): Promise<INodeExecutionData[]> {
 		const response = await apiService.getTeam(context);
 
-		if (!response.success) {
-			throw new Error(`Failed to get team: ${response.error}`);
-		}
-
-		if (Array.isArray(response.data)) {
-			return response.data.map((member) => ({ json: member }));
-		}
-
-		return [{ json: response.data }];
+		return ResponseUtils.formatArrayResponse(response);
 	}
 
 	private async handleGetConversion(
@@ -338,15 +307,7 @@ export class ContactResource implements IResourceStrategy {
 	): Promise<INodeExecutionData[]> {
 		const response = await apiService.getConversion(context);
 
-		if (!response.success) {
-			throw new Error(`Failed to get conversion statuses: ${response.error}`);
-		}
-
-		if (Array.isArray(response.data)) {
-			return response.data.map((status) => ({ json: status }));
-		}
-
-		return [{ json: response.data }];
+		return ResponseUtils.formatArrayResponse(response);
 	}
 
 	private async handleGetCustomFields(
@@ -355,14 +316,6 @@ export class ContactResource implements IResourceStrategy {
 	): Promise<INodeExecutionData[]> {
 		const response = await apiService.getCustomFields(context);
 
-		if (!response.success) {
-			throw new Error(`Failed to get custom fields: ${response.error}`);
-		}
-
-		if (Array.isArray(response.data)) {
-			return response.data.map((field) => ({ json: field }));
-		}
-
-		return [{ json: response.data }];
+		return ResponseUtils.formatArrayResponse(response);
 	}
 }
