@@ -1,9 +1,10 @@
 import { IExecuteFunctions, IDataObject } from 'n8n-workflow';
-import { NextLeadCredentials, RequestConfig, NextLeadApiResponse } from './types/NextLeadTypes';
+import { NextLeadCredentials, RequestConfig, N8nRequestOptions } from './types/n8n/RequestTypes';
+import { NextLeadApiResponse } from './types/shared/ApiTypes';
+import { createNextLeadError } from './types/n8n/ErrorTypes';
 
 export class NextLeadApiService {
 	private credentials: NextLeadCredentials;
-	[key: string]: any;
 
 	constructor(credentials: NextLeadCredentials) {
 		this.credentials = credentials;
@@ -11,12 +12,12 @@ export class NextLeadApiService {
 
 	async makeRequest(
 		context: IExecuteFunctions,
-		config: RequestConfig
+		config: RequestConfig,
 	): Promise<NextLeadApiResponse> {
 		try {
 			const { method, endpoint, data, queryParams } = config;
 
-			const requestOptions: any = {
+			const requestOptions: N8nRequestOptions = {
 				method,
 				url: `${this.credentials.domain}${endpoint}`,
 				json: true,
@@ -33,23 +34,27 @@ export class NextLeadApiService {
 			const response = await context.helpers.requestWithAuthentication.call(
 				context,
 				'nextLeadApi',
-				requestOptions
+				requestOptions,
 			);
 
 			return {
 				success: true,
 				data: response,
 			};
-		} catch (error: any) {
+		} catch (error: unknown) {
+			const nextLeadError = createNextLeadError(error);
 			return {
 				success: false,
-				error: error.message || 'Unknown error occurred',
+				error: nextLeadError.message,
 				data: null,
 			};
 		}
 	}
 
-	async createContact(context: IExecuteFunctions, contactData: IDataObject): Promise<NextLeadApiResponse> {
+	async createContact(
+		context: IExecuteFunctions,
+		contactData: IDataObject,
+	): Promise<NextLeadApiResponse> {
 		return this.makeRequest(context, {
 			method: 'POST',
 			endpoint: '/api/v2/receive/contact/new-contact',
@@ -57,7 +62,10 @@ export class NextLeadApiService {
 		});
 	}
 
-	async updateContact(context: IExecuteFunctions, contactData: IDataObject): Promise<NextLeadApiResponse> {
+	async updateContact(
+		context: IExecuteFunctions,
+		contactData: IDataObject,
+	): Promise<NextLeadApiResponse> {
 		return this.makeRequest(context, {
 			method: 'POST',
 			endpoint: '/api/v2/receive/contact/edit-contact',
@@ -73,7 +81,10 @@ export class NextLeadApiService {
 		});
 	}
 
-	async findContact(context: IExecuteFunctions, searchData: IDataObject): Promise<NextLeadApiResponse> {
+	async findContact(
+		context: IExecuteFunctions,
+		searchData: IDataObject,
+	): Promise<NextLeadApiResponse> {
 		return this.makeRequest(context, {
 			method: 'POST',
 			endpoint: '/api/v2/receive/contact/find-contact',
@@ -102,7 +113,10 @@ export class NextLeadApiService {
 		});
 	}
 
-	async createStructure(context: IExecuteFunctions, structureData: IDataObject): Promise<NextLeadApiResponse> {
+	async createStructure(
+		context: IExecuteFunctions,
+		structureData: IDataObject,
+	): Promise<NextLeadApiResponse> {
 		return this.makeRequest(context, {
 			method: 'POST',
 			endpoint: '/api/v2/receive/structure/new-structure',
@@ -110,7 +124,10 @@ export class NextLeadApiService {
 		});
 	}
 
-	async updateStructure(context: IExecuteFunctions, structureData: IDataObject): Promise<NextLeadApiResponse> {
+	async updateStructure(
+		context: IExecuteFunctions,
+		structureData: IDataObject,
+	): Promise<NextLeadApiResponse> {
 		return this.makeRequest(context, {
 			method: 'POST',
 			endpoint: '/api/v2/receive/structure/edit-structure',
@@ -118,7 +135,10 @@ export class NextLeadApiService {
 		});
 	}
 
-	async deleteStructure(context: IExecuteFunctions, structureId: string): Promise<NextLeadApiResponse> {
+	async deleteStructure(
+		context: IExecuteFunctions,
+		structureId: string,
+	): Promise<NextLeadApiResponse> {
 		return this.makeRequest(context, {
 			method: 'POST',
 			endpoint: '/api/v2/receive/structure/delete-structure',
@@ -133,7 +153,10 @@ export class NextLeadApiService {
 		});
 	}
 
-	async createSale(context: IExecuteFunctions, saleData: IDataObject): Promise<NextLeadApiResponse> {
+	async createSale(
+		context: IExecuteFunctions,
+		saleData: IDataObject,
+	): Promise<NextLeadApiResponse> {
 		return this.makeRequest(context, {
 			method: 'POST',
 			endpoint: '/api/v2/receive/sales/create-sale',
@@ -141,7 +164,10 @@ export class NextLeadApiService {
 		});
 	}
 
-	async updateSale(context: IExecuteFunctions, saleData: IDataObject): Promise<NextLeadApiResponse> {
+	async updateSale(
+		context: IExecuteFunctions,
+		saleData: IDataObject,
+	): Promise<NextLeadApiResponse> {
 		return this.makeRequest(context, {
 			method: 'PUT',
 			endpoint: '/api/v2/receive/sales/update-sale',
@@ -164,7 +190,10 @@ export class NextLeadApiService {
 		});
 	}
 
-	async createAction(context: IExecuteFunctions, actionData: IDataObject): Promise<NextLeadApiResponse> {
+	async createAction(
+		context: IExecuteFunctions,
+		actionData: IDataObject,
+	): Promise<NextLeadApiResponse> {
 		return this.makeRequest(context, {
 			method: 'POST',
 			endpoint: '/api/v2/receive/actions/create-action',
@@ -172,7 +201,10 @@ export class NextLeadApiService {
 		});
 	}
 
-	async updateAction(context: IExecuteFunctions, actionData: IDataObject): Promise<NextLeadApiResponse> {
+	async updateAction(
+		context: IExecuteFunctions,
+		actionData: IDataObject,
+	): Promise<NextLeadApiResponse> {
 		return this.makeRequest(context, {
 			method: 'PUT',
 			endpoint: '/api/v2/receive/actions/update-action',
@@ -180,7 +212,10 @@ export class NextLeadApiService {
 		});
 	}
 
-	async deleteAction(context: IExecuteFunctions, contactEmail: string): Promise<NextLeadApiResponse> {
+	async deleteAction(
+		context: IExecuteFunctions,
+		contactEmail: string,
+	): Promise<NextLeadApiResponse> {
 		return this.makeRequest(context, {
 			method: 'DELETE',
 			endpoint: '/api/v2/receive/actions/delete-action',

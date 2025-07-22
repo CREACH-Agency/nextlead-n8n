@@ -23,7 +23,7 @@ export abstract class BaseNextLeadNode implements INodeType {
 		displayName: string,
 		name: string,
 		_subtitle: string,
-		resourceType: ResourceType
+		resourceType: ResourceType,
 	): INodeTypeDescription {
 		return {
 			displayName,
@@ -58,7 +58,7 @@ export abstract class BaseNextLeadNode implements INodeType {
 	}
 
 	protected async initializeApiService(context: IExecuteFunctions): Promise<void> {
-		const credentials = await context.getCredentials('nextLeadApi') as NextLeadCredentials;
+		const credentials = (await context.getCredentials('nextLeadApi')) as NextLeadCredentials;
 		this.apiService = new NextLeadApiService(credentials);
 	}
 
@@ -85,6 +85,6 @@ export abstract class BaseNextLeadNode implements INodeType {
 	protected abstract executeOperation(
 		context: IExecuteFunctions,
 		operation: OperationType,
-		itemIndex: number
+		itemIndex: number,
 	): Promise<any>;
 }
