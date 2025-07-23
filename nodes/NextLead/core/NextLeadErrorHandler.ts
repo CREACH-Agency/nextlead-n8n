@@ -1,8 +1,10 @@
 import { IDataObject, NodeOperationError, INode } from 'n8n-workflow';
+import { createNextLeadError } from './types/n8n/ErrorTypes';
 
 export class NextLeadErrorHandler {
-	static handleApiError(error: any, node: INode): NodeOperationError {
-		if (error.statusCode === 401) {
+	static handleApiError(error: unknown, node: INode): NodeOperationError {
+		const nextLeadError = createNextLeadError(error);
+		if (nextLeadError.statusCode === 401) {
 			return new NodeOperationError(
 				node,
 				'Authentication failed. Please check your NextLead API credentials.',
@@ -10,7 +12,7 @@ export class NextLeadErrorHandler {
 			);
 		}
 
-		if (error.statusCode === 404) {
+		if (nextLeadError.statusCode === 404) {
 			return new NodeOperationError(
 				node,
 				'Organization not found. Please check your domain configuration.',
@@ -18,27 +20,28 @@ export class NextLeadErrorHandler {
 			);
 		}
 
-		if (error.statusCode === 429) {
+		if (nextLeadError.statusCode === 429) {
 			return new NodeOperationError(node, 'Rate limit exceeded. Please try again later.', {
 				description: 'Too many requests have been made to the API.',
 			});
 		}
 
-		if (error.statusCode >= 500) {
+		if (nextLeadError.statusCode && nextLeadError.statusCode >= 500) {
 			return new NodeOperationError(node, 'NextLead API server error. Please try again later.', {
 				description: 'The NextLead API is experiencing issues.',
 			});
 		}
 
-		return new NodeOperationError(node, error.message || 'An unexpected error occurred', {
+		return new NodeOperationError(node, nextLeadError.message || 'An unexpected error occurred', {
 			description: 'Please check your input data and try again.',
 		});
 	}
 
-	static formatErrorData(error: any): IDataObject {
+	static formatErrorData(error: unknown): IDataObject {
+		const nextLeadError = createNextLeadError(error);
 		return {
-			error: error.message || 'Unknown error',
-			statusCode: error.statusCode || 500,
+			error: nextLeadError.message,
+			statusCode: nextLeadError.statusCode || 500,
 			timestamp: new Date().toISOString(),
 		};
 	}

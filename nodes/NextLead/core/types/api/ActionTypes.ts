@@ -3,23 +3,21 @@ import { IDataObject } from 'n8n-workflow';
 export type ActionPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type ActionStatus = 'open' | 'in_progress' | 'completed' | 'cancelled';
 
-export interface ActionCreateRequest extends IDataObject {
-	column: string;
+export interface ActionBaseFields {
 	title?: string;
-	assign_contact?: string;
 	description?: string;
 	dueDate?: string;
 	priority?: ActionPriority;
 	status?: ActionStatus;
 }
 
-export interface ActionUpdateRequest extends IDataObject {
+export interface ActionCreateRequest extends IDataObject, ActionBaseFields {
+	column: string;
+	assign_contact?: string;
+}
+
+export interface ActionUpdateRequest extends IDataObject, ActionBaseFields {
 	id?: string;
-	title?: string;
-	description?: string;
-	dueDate?: string;
-	priority?: ActionPriority;
-	status?: ActionStatus;
 	columnId?: string;
 }
 

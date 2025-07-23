@@ -12,6 +12,7 @@ import {
 import { NextLeadApiService } from './NextLeadApiService';
 import { NextLeadErrorHandler } from './NextLeadErrorHandler';
 import { NextLeadCredentials, ResourceType, OperationType } from './types/NextLeadTypes';
+import { NextLeadApiResponse } from './types/shared/ApiTypes';
 
 export abstract class BaseNextLeadNode implements INodeType {
 	protected apiService: NextLeadApiService | undefined;
@@ -62,14 +63,18 @@ export abstract class BaseNextLeadNode implements INodeType {
 		this.apiService = new NextLeadApiService(credentials);
 	}
 
-	protected processResponse(response: any): IDataObject[] {
-		if (Array.isArray(response)) {
-			return response;
+	protected processResponse<T = unknown>(response: NextLeadApiResponse<T>): IDataObject[] {
+		if (!response || !response.success || !response.data) {
+			return [];
 		}
-		return [response as IDataObject];
+
+		if (Array.isArray(response.data)) {
+			return response.data.map((item) => item as IDataObject);
+		}
+		return [response.data as IDataObject];
 	}
 
-	protected handleError(error: any, context: IExecuteFunctions): IDataObject[] {
+	protected handleError(error: unknown, context: IExecuteFunctions): IDataObject[] {
 		if (context.continueOnFail()) {
 			return [this.errorHandler.formatErrorData(error)];
 		}
@@ -86,5 +91,5 @@ export abstract class BaseNextLeadNode implements INodeType {
 		context: IExecuteFunctions,
 		operation: OperationType,
 		itemIndex: number,
-	): Promise<any>;
+	): Promise<INodeExecutionData[]>;
 }

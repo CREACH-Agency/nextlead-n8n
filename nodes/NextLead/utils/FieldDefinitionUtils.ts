@@ -6,8 +6,16 @@ export interface IFieldConfig {
 	description: string;
 	required?: boolean;
 	placeholder?: string;
-	default?: any;
-	typeOptions?: any;
+	default?: string | number | boolean;
+	typeOptions?: {
+		email?: boolean;
+		rows?: number;
+		numberPrecision?: number;
+		minValue?: number;
+		maxValue?: number;
+		loadOptionsMethod?: string;
+		loadOptionsDependsOn?: string[];
+	};
 }
 
 export interface ICollectionFieldConfig {

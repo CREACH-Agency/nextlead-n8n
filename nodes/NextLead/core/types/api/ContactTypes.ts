@@ -1,8 +1,42 @@
 import { IDataObject } from 'n8n-workflow';
 
-export type ContactCustomFieldValue = string | number | boolean | Date | null;
+export type ContactCivility = 'M' | 'MME' | 'NEUTRAL';
+export type ContactType =
+	| 'CLIENT'
+	| 'ADHERENT'
+	| 'PROSPECT'
+	| 'PARTNER'
+	| 'SUPPLIER'
+	| 'INVESTOR'
+	| 'DECISION_MAKER'
+	| 'INFLUENCER'
+	| 'FINAL_USER'
+	| 'GOVERNMENT_REPRESENTATIVE'
+	| 'CANDIDATE'
+	| 'JOURNALIST'
+	| 'MENTOR';
 
-export interface ContactCreateRequest extends IDataObject {
+export type ContactStatus =
+	| 'ACTIVE'
+	| 'INACTIVE'
+	| 'TO_RECONTACT'
+	| 'VIP'
+	| 'UNEMPLOYED'
+	| 'RETIRED'
+	| 'TERMINATED'
+	| 'DISBARRED'
+	| 'DECEASED'
+	| 'STUDENT'
+	| 'RESIGNATION';
+
+export type ContactPriority = 'LOW' | 'NORMAL' | 'HIGH';
+export type ContactPreferredCommunication = 'EMAIL' | 'PHONE' | 'SMS' | 'SOCIAL';
+export type ContactPreferredTimeToContact = 'MORNING' | 'AFTERNOON' | 'END_DAY';
+
+export type ContactCustomFieldValue = string | number | boolean | Date | null;
+export type ContactCustomFieldType = 'text' | 'number' | 'boolean' | 'date' | 'select';
+
+export interface ContactBaseFields {
 	firstName: string;
 	lastName: string;
 	email: string;
@@ -16,19 +50,40 @@ export interface ContactCreateRequest extends IDataObject {
 	address?: string;
 	zipCode?: string;
 	country?: string;
-	civility?: 'M' | 'Mme' | 'Mlle' | 'Dr' | 'Pr' | 'Me';
-	type?: 'PHYSIQUE' | 'MORALE';
-	status?: 'ACTIF' | 'INACTIF' | 'ARCHIVE';
+	activity?: string;
+	sector?: string;
+	csp?: string;
+	organizationId?: string;
+	civility?: ContactCivility;
+	type?: ContactType;
+	status?: ContactStatus;
+	priority?: ContactPriority;
 	membership?: boolean;
 	optInMarketing?: boolean;
 	optInNewsletter?: boolean;
 	optInSms?: boolean;
+	preferredLanguage?: string;
+	preferredCommunication?: ContactPreferredCommunication;
+	preferredTimeToContact?: ContactPreferredTimeToContact;
+}
+
+export interface ContactManagementFields {
 	lists?: string[];
 	users?: string[];
 	customFieldValues?: Record<string, ContactCustomFieldValue>;
+	lead_score?: number;
+	callRetry?: number;
+	lastCallOutcome?: string;
+	conversionStatusId?: string;
+	comment?: string;
 }
 
-export interface ContactUpdateRequest extends IDataObject {
+export interface ContactCreateRequest
+	extends IDataObject,
+		ContactBaseFields,
+		ContactManagementFields {}
+
+export interface ContactUpdateRequest extends IDataObject, ContactManagementFields {
 	id: string;
 	firstName?: string;
 	lastName?: string;
@@ -43,16 +98,21 @@ export interface ContactUpdateRequest extends IDataObject {
 	address?: string;
 	zipCode?: string;
 	country?: string;
-	civility?: 'M' | 'Mme' | 'Mlle' | 'Dr' | 'Pr' | 'Me';
-	type?: 'PHYSIQUE' | 'MORALE';
-	status?: 'ACTIF' | 'INACTIF' | 'ARCHIVE';
+	activity?: string;
+	sector?: string;
+	csp?: string;
+	organizationId?: string;
+	civility?: ContactCivility;
+	type?: ContactType;
+	status?: ContactStatus;
+	priority?: ContactPriority;
 	membership?: boolean;
 	optInMarketing?: boolean;
 	optInNewsletter?: boolean;
 	optInSms?: boolean;
-	lists?: string[];
-	users?: string[];
-	customFieldValues?: Record<string, ContactCustomFieldValue>;
+	preferredLanguage?: string;
+	preferredCommunication?: ContactPreferredCommunication;
+	preferredTimeToContact?: ContactPreferredTimeToContact;
 }
 
 export interface ContactSearchRequest extends IDataObject {
@@ -64,28 +124,8 @@ export interface ContactSearchRequest extends IDataObject {
 	lastName?: string;
 }
 
-export interface ContactResponse extends IDataObject {
+export interface ContactResponse extends IDataObject, ContactBaseFields {
 	id: string;
-	firstName: string;
-	lastName: string;
-	email: string;
-	phone?: string;
-	mobile?: string;
-	phonePro?: string;
-	linkedin?: string;
-	job?: string;
-	company?: string;
-	city?: string;
-	address?: string;
-	zipCode?: string;
-	country?: string;
-	civility?: 'M' | 'Mme' | 'Mlle' | 'Dr' | 'Pr' | 'Me';
-	type?: 'PHYSIQUE' | 'MORALE';
-	status?: 'ACTIF' | 'INACTIF' | 'ARCHIVE';
-	membership?: boolean;
-	optInMarketing?: boolean;
-	optInNewsletter?: boolean;
-	optInSms?: boolean;
 	createdAt: string;
 	updatedAt: string;
 	customFields?: Record<string, ContactCustomFieldValue>;
@@ -108,7 +148,7 @@ export interface ContactConversionData extends IDataObject {
 export interface ContactCustomField extends IDataObject {
 	id: string;
 	name: string;
-	type: 'text' | 'number' | 'boolean' | 'date' | 'select';
+	type: ContactCustomFieldType;
 	required: boolean;
 	options?: string[];
 }

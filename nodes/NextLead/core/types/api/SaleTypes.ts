@@ -1,13 +1,16 @@
 import { IDataObject } from 'n8n-workflow';
 
-export interface SaleCreateRequest extends IDataObject {
-	contactId: string;
-	columnId: string;
+export interface SaleBaseFields {
 	name: string;
 	amount?: number;
 	probability?: number;
 	closeDate?: string;
 	description?: string;
+}
+
+export interface SaleCreateRequest extends IDataObject, SaleBaseFields {
+	contactId: string;
+	columnId: string;
 }
 
 export interface SaleUpdateRequest extends IDataObject {
@@ -24,15 +27,10 @@ export interface SaleDeleteRequest extends IDataObject {
 	contact_email: string;
 }
 
-export interface SaleResponse extends IDataObject {
+export interface SaleResponse extends IDataObject, SaleBaseFields {
 	id: string;
 	contactId: string;
 	columnId: string;
-	name: string;
-	amount: number;
-	probability: number;
-	closeDate?: string;
-	description?: string;
 	createdAt: string;
 	updatedAt: string;
 }
