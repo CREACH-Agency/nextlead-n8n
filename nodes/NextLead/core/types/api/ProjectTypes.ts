@@ -14,9 +14,11 @@ export interface TaskBaseFields {
 }
 
 export interface ProjectCreateRequest extends IDataObject, ProjectBaseFields {
-	column: string;
-	tasks?: TaskBaseFields[];
-	assign_contact?: string;
+	column: string; // maps to stageId
+	taskType?: TaskType; // single task created with project
+	deadline?: string;
+	assign_contact?: string; // email or LinkedIn URL
+	assigned_to?: string; // user ID
 }
 
 export interface ProjectUpdateRequest extends IDataObject {
@@ -39,13 +41,16 @@ export interface TaskUpdateRequest extends IDataObject {
 }
 
 export interface ProjectDeleteRequest extends IDataObject {
-	contact_email: string;
+	id: string;
 }
 
 export interface ProjectResponse extends IDataObject, ProjectBaseFields {
 	id: string;
 	columnId: string;
 	contactId?: string;
+	order?: number;
+	assignedToId?: string;
+	createdById?: string;
 	createdAt: string;
 	updatedAt: string;
 	tasks?: TaskResponse[];

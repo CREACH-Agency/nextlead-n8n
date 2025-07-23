@@ -13,11 +13,20 @@ export interface SalesDealBaseFields {
 	priority?: SalesDealPriority;
 	type?: SalesDealType;
 	status?: SalesDealStatus;
+	cost?: number;
+	currency?: string;
+	openDate?: string;
+	order?: number;
+	firstTouch?: string;
+	lastTouch?: string;
+	assignedToId?: string;
+	createdById?: string;
 }
 
 export interface SalesDealCreateRequest extends IDataObject, SalesDealBaseFields {
-	contactId: string;
-	stageId: string;
+	contact?: string; // email for contact assignment
+	contactId?: string; // or direct ID
+	column: string; // maps to stageId in API
 }
 
 export interface SalesDealUpdateRequest extends IDataObject {
@@ -34,7 +43,7 @@ export interface SalesDealUpdateRequest extends IDataObject {
 }
 
 export interface SalesDealDeleteRequest extends IDataObject {
-	contact_email: string;
+	id: string;
 }
 
 export interface SalesDealResponse extends IDataObject, SalesDealBaseFields {

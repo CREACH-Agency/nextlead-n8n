@@ -17,9 +17,13 @@ export {
 	StructureUpdateRequest,
 	StructureResponse,
 } from './api/StructureTypes';
-export { SaleCreateRequest as SaleData, SaleUpdateRequest, SaleResponse } from './api/SaleTypes';
 export {
-	ActionCreateRequest as ActionData,
-	ActionUpdateRequest,
-	ActionResponse,
-} from './api/ActionTypes';
+	SalesDealCreateRequest as SalesDealData,
+	SalesDealUpdateRequest,
+	SalesDealResponse,
+} from './api/SalesDealTypes';
+export {
+	ProjectCreateRequest as ProjectData,
+	ProjectUpdateRequest,
+	ProjectResponse,
+} from './api/ProjectTypes';
