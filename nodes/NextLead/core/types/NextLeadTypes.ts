@@ -10,7 +10,6 @@ export {
 	ContactUpdateRequest,
 	ContactSearchRequest,
 	ContactResponse,
-	ContactCustomFieldValue,
 } from './api/ContactTypes';
 export {
 	StructureCreateRequest as StructureData,

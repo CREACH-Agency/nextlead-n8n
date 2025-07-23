@@ -11,16 +11,6 @@ export interface SalesDealBaseFields {
 	closeDate?: string;
 	description?: string;
 	priority?: SalesDealPriority;
-	type?: SalesDealType;
-	status?: SalesDealStatus;
-	cost?: number;
-	currency?: string;
-	openDate?: string;
-	order?: number;
-	firstTouch?: string;
-	lastTouch?: string;
-	assignedToId?: string;
-	createdById?: string;
 }
 
 export interface SalesDealCreateRequest extends IDataObject, SalesDealBaseFields {
@@ -38,8 +28,6 @@ export interface SalesDealUpdateRequest extends IDataObject {
 	description?: string;
 	stageId?: string;
 	priority?: SalesDealPriority;
-	type?: SalesDealType;
-	status?: SalesDealStatus;
 }
 
 export interface SalesDealDeleteRequest extends IDataObject {
