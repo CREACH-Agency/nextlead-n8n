@@ -5,6 +5,8 @@ import {
 	INodeExecutionData,
 	INodeProperties,
 	NodeConnectionType,
+	ILoadOptionsFunctions,
+	INodePropertyOptions,
 } from 'n8n-workflow';
 
 import { ResourceManager } from './core/ResourceManager';
@@ -15,6 +17,8 @@ import { ActionResource } from './resources/ActionResource';
 import { ListResource } from './resources/ListResource';
 import { NextLeadErrorHandler } from './core/NextLeadErrorHandler';
 import { ResourceType, OperationType } from './core/types/NextLeadTypes';
+import { ConversionStatus } from './core/types/shared/ApiTypes';
+import { NextLeadCredentials } from './core/types/n8n/RequestTypes';
 
 export class NextLead implements INodeType {
 	description: INodeTypeDescription = {
@@ -102,6 +106,42 @@ export class NextLead implements INodeType {
 	private getFields(): INodeProperties[] {
 		return NextLead.resourceManager.getAllFields();
 	}
+
+	methods = {
+		loadOptions: {
+			async getConversionStatuses(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				try {
+					const credentials = await this.getCredentials('nextLeadApi') as NextLeadCredentials;
+					// For loadOptions, we'll make a direct HTTP request instead of using the service
+					const requestOptions = {
+						method: 'GET' as const,
+						url: `${credentials.domain}/api/v2/receive/contact/get-conversion`,
+						headers: {
+							'Authorization': `Bearer ${credentials.apiKey}`,
+						},
+						json: true,
+					};
+					
+					const response = await this.helpers.request(requestOptions);
+					
+					if (Array.isArray(response)) {
+						return (response as ConversionStatus[]).map((status) => ({
+							name: status.name,
+							value: status.id,
+						}));
+					}
+					
+					// If API call fails, return empty array
+					// The user must configure conversion statuses in NextLead first
+					return [];
+				} catch (error) {
+					// Return empty array on error
+					// The user must configure conversion statuses in NextLead first
+					return [];
+				}
+			},
+		},
+	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();

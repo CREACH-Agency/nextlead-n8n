@@ -79,6 +79,34 @@ export class ContactResource implements IResourceStrategy {
 				required: true,
 				operations: ['create'],
 			}),
+			{
+				displayName: 'Civility',
+				name: 'civility',
+				type: 'options',
+				required: true,
+				displayOptions: {
+					show: {
+						resource: ['contact'],
+						operation: ['create'],
+					},
+				},
+				options: [
+					{
+						name: 'M.',
+						value: 'M',
+					},
+					{
+						name: 'Mme',
+						value: 'MME',
+					},
+					{
+						name: 'Neutre',
+						value: 'NEUTRAL',
+					},
+				],
+				default: 'M',
+				description: 'Civility of the contact',
+			},
 			FieldDefinitionUtils.createStringField({
 				name: 'firstName',
 				displayName: 'First Name',
@@ -93,6 +121,32 @@ export class ContactResource implements IResourceStrategy {
 				required: false,
 				operations: ['create'],
 			}),
+			// Conversion Status field - required for create
+			{
+				displayName: 'Conversion Status Name or ID',
+				name: 'conversionStatusId',
+				type: 'options',
+				displayOptions: {
+					show: {
+						resource: ['contact'],
+						operation: ['create'],
+					},
+				},
+				typeOptions: {
+					loadOptionsMethod: 'getConversionStatuses',
+				},
+				default: '',
+				description:
+					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+			},
+			// Job/Activity field
+			FieldDefinitionUtils.createStringField({
+				name: 'activity',
+				displayName: 'Job/Activity',
+				description: 'Job or activity of the contact',
+				required: false,
+				operations: ['create'],
+			}),
 			FieldDefinitionUtils.createCollectionField({
 				name: 'additionalFields',
 				displayName: 'Additional Fields',
@@ -101,14 +155,19 @@ export class ContactResource implements IResourceStrategy {
 				fields: [
 					...FieldDefinitionUtils.getCommonContactFields(),
 					{
-						name: 'lists',
-						displayName: 'List IDs',
-						description: 'Comma-separated list IDs to assign the contact to',
+						name: 'mobile',
+						displayName: 'Mobile',
+						description: 'Mobile phone number',
 					},
 					{
-						name: 'users',
-						displayName: 'User IDs',
-						description: 'Comma-separated user IDs to assign the contact to',
+						name: 'phonePro',
+						displayName: 'Phone Pro',
+						description: 'Professional phone number',
+					},
+					{
+						name: 'comment',
+						displayName: 'Comment',
+						description: 'Additional comments about the contact',
 					},
 				],
 			}),
@@ -208,8 +267,15 @@ export class ContactResource implements IResourceStrategy {
 		apiService: NextLeadApiService,
 	): Promise<INodeExecutionData[]> {
 		const email = context.getNodeParameter('email', itemIndex) as string;
+		const civility = context.getNodeParameter('civility', itemIndex) as string;
 		const firstName = context.getNodeParameter('firstName', itemIndex, '') as string;
 		const lastName = context.getNodeParameter('lastName', itemIndex, '') as string;
+		const conversionStatusId = context.getNodeParameter(
+			'conversionStatusId',
+			itemIndex,
+			'',
+		) as string;
+		const activity = context.getNodeParameter('activity', itemIndex, '') as string;
 		const additionalFields = context.getNodeParameter(
 			'additionalFields',
 			itemIndex,
@@ -218,10 +284,16 @@ export class ContactResource implements IResourceStrategy {
 
 		const contactData: IDataObject = {
 			email,
+			civility,
 			...(firstName && { firstName }),
 			...(lastName && { lastName }),
+			...(conversionStatusId && { conversionStatusId }),
+			...(activity && { activity }),
 			...additionalFields,
 		};
+
+		// Debug log - using context.logger for n8n compatibility
+		context.logger.info('Creating contact with data:', contactData);
 
 		const response = await apiService.createContact(context, contactData);
 
