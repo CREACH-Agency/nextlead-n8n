@@ -1,4 +1,3 @@
-// nodes/NextLead/core/BaseNextLeadNode.ts
 import {
 	IExecuteFunctions,
 	INodeType,
@@ -30,7 +29,12 @@ export abstract class BaseNextLeadNode implements INodeType {
 			displayName,
 			name,
 			icon: 'file:nextlead.svg',
-			group: ['transform'],
+			/*
+			 * - ['trigger']: Node waits for external triggers (webhooks, timers, events)
+			 * - []: Empty array for standard nodes
+			 *   https://docs.n8n.io/integrations/creating-nodes/build/reference/node-base-files/standard-parameters/#group
+			 */
+			group: [],
 			version: 1,
 			subtitle: '={{ $parameter["operation"] + ": " + $parameter["resource"] }}',
 			description: `Interact with NextLead CRM API - ${displayName}`,

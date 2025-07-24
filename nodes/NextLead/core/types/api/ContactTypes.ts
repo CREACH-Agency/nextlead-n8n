@@ -1,6 +1,5 @@
 import { IDataObject } from 'n8n-workflow';
 
-// Enums utilisés par l'API
 export type ContactCivility = 'M' | 'MME' | 'NEUTRAL';
 export type ContactStatus =
 	| 'ACTIVE'
@@ -15,7 +14,6 @@ export type ContactStatus =
 	| 'STUDENT'
 	| 'RESIGNATION';
 
-// Types pour les patterns spéciaux de l'API
 export interface ContactSocial {
 	type: string;
 	url: string;
