@@ -35,22 +35,10 @@ export class SaleResource implements IResourceStrategy {
 						action: 'Delete a sale',
 					},
 					{
-						name: 'Get',
-						value: 'get',
-						description: 'Get a sale',
-						action: 'Get a sale',
-					},
-					{
 						name: 'Get Columns',
 						value: 'getColumns',
 						description: 'Get sale columns',
 						action: 'Get sale columns',
-					},
-					{
-						name: 'Get Many',
-						value: 'getMany',
-						description: 'Get many sales',
-						action: 'Get many sales',
 					},
 					{
 						name: 'Update',
@@ -106,18 +94,6 @@ export class SaleResource implements IResourceStrategy {
 						description: 'Probability of closing the sale (0-100)',
 						default: 0,
 					},
-					{
-						displayName: 'Close Date',
-						name: 'closeDate',
-						description: 'Expected close date',
-						default: '',
-					},
-					{
-						displayName: 'Description',
-						name: 'description',
-						description: 'Sale description',
-						default: '',
-					},
 				],
 			}),
 
@@ -152,18 +128,6 @@ export class SaleResource implements IResourceStrategy {
 						description: 'Probability of closing the sale',
 						default: 0,
 					},
-					{
-						displayName: 'Close Date',
-						name: 'closeDate',
-						description: 'Expected close date',
-						default: '',
-					},
-					{
-						displayName: 'Description',
-						name: 'description',
-						description: 'Sale description',
-						default: '',
-					},
 				],
 			}),
 
@@ -173,24 +137,6 @@ export class SaleResource implements IResourceStrategy {
 				displayName: 'Contact Email',
 				description: 'Email of the contact whose sale to delete',
 				operations: ['delete'],
-			}),
-
-			// Get fields
-			FieldDefinitionUtils.createIdField({
-				name: 'saleId',
-				displayName: 'Sale ID',
-				description: 'ID of the sale to get',
-				operations: ['get'],
-			}),
-
-			// Get Many fields
-			FieldDefinitionUtils.createNumberField({
-				name: 'limit',
-				displayName: 'Limit',
-				description: 'Maximum number of sales to return',
-				required: false,
-				operations: ['getMany'],
-				default: 100,
 			}),
 		];
 	}
@@ -210,10 +156,6 @@ export class SaleResource implements IResourceStrategy {
 				return this.handleUpdateSale(context, itemIndex, apiService);
 			case 'delete':
 				return this.handleDeleteSale(context, itemIndex, apiService);
-			case 'get':
-				return [{ json: { message: 'Get single sale not available in API' } }];
-			case 'getMany':
-				return [{ json: { message: 'Get many sales not available in API' } }];
 			case 'getColumns':
 				return this.handleGetColumns(context, apiService);
 			default:

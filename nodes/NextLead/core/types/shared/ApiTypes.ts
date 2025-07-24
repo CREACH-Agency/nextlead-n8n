@@ -16,6 +16,16 @@ export interface NextLeadListResponse extends IDataObject {
 	updatedAt: string;
 }
 
+export interface ConversionStatus {
+	id: string;
+	name: string;
+	type?: string;
+	color?: string;
+	icon?: string;
+	order?: number;
+	organizationId?: string;
+}
+
 export type ResourceType = 'contact' | 'structure' | 'sale' | 'action' | 'list';
 
 export type OperationType =
@@ -24,6 +34,7 @@ export type OperationType =
 	| 'delete'
 	| 'get'
 	| 'getMany'
+	| 'find'
 	| 'getTeam'
 	| 'getConversion'
 	| 'getCustomFields'

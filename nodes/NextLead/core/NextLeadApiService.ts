@@ -17,6 +17,14 @@ export class NextLeadApiService {
 		try {
 			const { method, endpoint, data, queryParams } = config;
 
+			// Debug log
+			context.logger.info('NextLead API Request:', {
+				method,
+				endpoint,
+				data,
+				hasApiKey: !!this.credentials.apiKey,
+			});
+
 			const requestOptions: N8nRequestOptions = {
 				method,
 				url: `${this.credentials.domain}${endpoint}`,

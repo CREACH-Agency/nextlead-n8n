@@ -35,10 +35,10 @@ export class ContactResource implements IResourceStrategy {
 						action: 'Delete a contact',
 					},
 					{
-						name: 'Get',
-						value: 'get',
-						description: 'Get a contact',
-						action: 'Get a contact',
+						name: 'Find',
+						value: 'find',
+						description: 'Find a contact by email or LinkedIn',
+						action: 'Find a contact',
 					},
 					{
 						name: 'Get Conversion',
@@ -50,12 +50,6 @@ export class ContactResource implements IResourceStrategy {
 						name: 'Get Custom Fields',
 						value: 'getCustomFields',
 						action: 'Get custom fields',
-					},
-					{
-						name: 'Get Many',
-						value: 'getMany',
-						description: 'Get many contacts',
-						action: 'Get many contacts',
 					},
 					{
 						name: 'Get Team',
@@ -85,6 +79,34 @@ export class ContactResource implements IResourceStrategy {
 				required: true,
 				operations: ['create'],
 			}),
+			{
+				displayName: 'Civility',
+				name: 'civility',
+				type: 'options',
+				required: true,
+				displayOptions: {
+					show: {
+						resource: ['contact'],
+						operation: ['create'],
+					},
+				},
+				options: [
+					{
+						name: 'M.',
+						value: 'M',
+					},
+					{
+						name: 'Mme',
+						value: 'MME',
+					},
+					{
+						name: 'Neutre',
+						value: 'NEUTRAL',
+					},
+				],
+				default: 'M',
+				description: 'Civility of the contact',
+			},
 			FieldDefinitionUtils.createStringField({
 				name: 'firstName',
 				displayName: 'First Name',
@@ -99,6 +121,32 @@ export class ContactResource implements IResourceStrategy {
 				required: false,
 				operations: ['create'],
 			}),
+			// Conversion Status field - required for create
+			{
+				displayName: 'Conversion Status Name or ID',
+				name: 'conversionStatusId',
+				type: 'options',
+				displayOptions: {
+					show: {
+						resource: ['contact'],
+						operation: ['create'],
+					},
+				},
+				typeOptions: {
+					loadOptionsMethod: 'getConversionStatuses',
+				},
+				default: '',
+				description:
+					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+			},
+			// Job/Activity field
+			FieldDefinitionUtils.createStringField({
+				name: 'activity',
+				displayName: 'Job/Activity',
+				description: 'Job or activity of the contact',
+				required: false,
+				operations: ['create'],
+			}),
 			FieldDefinitionUtils.createCollectionField({
 				name: 'additionalFields',
 				displayName: 'Additional Fields',
@@ -107,14 +155,19 @@ export class ContactResource implements IResourceStrategy {
 				fields: [
 					...FieldDefinitionUtils.getCommonContactFields(),
 					{
-						name: 'lists',
-						displayName: 'List IDs',
-						description: 'Comma-separated list IDs to assign the contact to',
+						name: 'mobile',
+						displayName: 'Mobile',
+						description: 'Mobile phone number',
 					},
 					{
-						name: 'users',
-						displayName: 'User IDs',
-						description: 'Comma-separated user IDs to assign the contact to',
+						name: 'phonePro',
+						displayName: 'Phone Pro',
+						description: 'Professional phone number',
+					},
+					{
+						name: 'comment',
+						displayName: 'Comment',
+						description: 'Additional comments about the contact',
 					},
 				],
 			}),
@@ -161,23 +214,21 @@ export class ContactResource implements IResourceStrategy {
 				operations: ['delete'],
 			}),
 
-			// Get fields
-			FieldDefinitionUtils.createStringField({
-				name: 'contactId',
-				displayName: 'Contact ID',
-				description: 'ID of the contact to get',
-				required: true,
-				operations: ['get'],
-			}),
-
-			// Get Many fields
-			FieldDefinitionUtils.createNumberField({
-				name: 'limit',
-				displayName: 'Limit',
-				description: 'Maximum number of contacts to return',
+			// Find fields
+			FieldDefinitionUtils.createEmailField({
+				name: 'email',
+				displayName: 'Email',
+				description: 'Email address of the contact to find',
 				required: false,
-				operations: ['getMany'],
-				default: 100,
+				operations: ['find'],
+			}),
+			FieldDefinitionUtils.createStringField({
+				name: 'linkedinUrl',
+				displayName: 'LinkedIn URL',
+				description: 'LinkedIn profile URL to find the contact',
+				required: false,
+				operations: ['find'],
+				placeholder: 'https://linkedin.com/in/profile',
 			}),
 		];
 	}
@@ -197,10 +248,8 @@ export class ContactResource implements IResourceStrategy {
 				return this.handleUpdateContact(context, itemIndex, apiService);
 			case 'delete':
 				return this.handleDeleteContact(context, itemIndex, apiService);
-			case 'get':
-				return this.handleGetContact(context, itemIndex, apiService);
-			case 'getMany':
-				return this.handleGetManyContacts(context, itemIndex, apiService);
+			case 'find':
+				return this.handleFindContact(context, itemIndex, apiService);
 			case 'getTeam':
 				return this.handleGetTeam(context, apiService);
 			case 'getConversion':
@@ -218,8 +267,15 @@ export class ContactResource implements IResourceStrategy {
 		apiService: NextLeadApiService,
 	): Promise<INodeExecutionData[]> {
 		const email = context.getNodeParameter('email', itemIndex) as string;
+		const civility = context.getNodeParameter('civility', itemIndex) as string;
 		const firstName = context.getNodeParameter('firstName', itemIndex, '') as string;
 		const lastName = context.getNodeParameter('lastName', itemIndex, '') as string;
+		const conversionStatusId = context.getNodeParameter(
+			'conversionStatusId',
+			itemIndex,
+			'',
+		) as string;
+		const activity = context.getNodeParameter('activity', itemIndex, '') as string;
 		const additionalFields = context.getNodeParameter(
 			'additionalFields',
 			itemIndex,
@@ -228,10 +284,16 @@ export class ContactResource implements IResourceStrategy {
 
 		const contactData: IDataObject = {
 			email,
+			civility,
 			...(firstName && { firstName }),
 			...(lastName && { lastName }),
+			...(conversionStatusId && { conversionStatusId }),
+			...(activity && { activity }),
 			...additionalFields,
 		};
+
+		// Debug log - using context.logger for n8n compatibility
+		context.logger.info('Creating contact with data:', contactData);
 
 		const response = await apiService.createContact(context, contactData);
 
@@ -268,28 +330,29 @@ export class ContactResource implements IResourceStrategy {
 		return ResponseUtils.formatSuccessResponse(`Contact deleted successfully: ${contactId}`);
 	}
 
-	private async handleGetContact(
+	private async handleFindContact(
 		context: IExecuteFunctions,
 		itemIndex: number,
 		apiService: NextLeadApiService,
 	): Promise<INodeExecutionData[]> {
-		const contactId = context.getNodeParameter('contactId', itemIndex) as string;
+		const email = context.getNodeParameter('email', itemIndex, '') as string;
+		const linkedinUrl = context.getNodeParameter('linkedinUrl', itemIndex, '') as string;
 
-		const response = await apiService.findContact(context, { id: contactId });
+		if (!email && !linkedinUrl) {
+			throw new Error('Either email or LinkedIn URL must be provided');
+		}
+
+		const searchData: IDataObject = {};
+		if (email) {
+			searchData.email = email;
+		}
+		if (linkedinUrl) {
+			searchData.linkedin_url = linkedinUrl;
+		}
+
+		const response = await apiService.findContact(context, searchData);
 
 		return ResponseUtils.formatSingleResponse(response);
-	}
-
-	private async handleGetManyContacts(
-		context: IExecuteFunctions,
-		itemIndex: number,
-		apiService: NextLeadApiService,
-	): Promise<INodeExecutionData[]> {
-		const limit = context.getNodeParameter('limit', itemIndex) as number;
-
-		const response = await apiService.findContact(context, { limit });
-
-		return ResponseUtils.formatArrayResponse(response);
 	}
 
 	private async handleGetTeam(

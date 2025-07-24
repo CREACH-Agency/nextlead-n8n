@@ -198,21 +198,6 @@ export class FieldDefinitionUtils {
 	static getCommonContactFields(): IFieldConfig[] {
 		return [
 			{
-				name: 'city',
-				displayName: 'City',
-				description: 'City of the contact',
-			},
-			{
-				name: 'company',
-				displayName: 'Company',
-				description: 'Company of the contact',
-			},
-			{
-				name: 'job',
-				displayName: 'Job Title',
-				description: 'Job title of the contact',
-			},
-			{
 				name: 'linkedin',
 				displayName: 'LinkedIn',
 				description: 'LinkedIn profile URL',
