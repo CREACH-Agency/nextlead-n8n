@@ -35,10 +35,10 @@ export class ContactResource implements IResourceStrategy {
 						action: 'Delete a contact',
 					},
 					{
-						name: 'Get',
-						value: 'get',
-						description: 'Get a contact',
-						action: 'Get a contact',
+						name: 'Find',
+						value: 'find',
+						description: 'Find a contact by email or LinkedIn',
+						action: 'Find a contact',
 					},
 					{
 						name: 'Get Conversion',
@@ -50,12 +50,6 @@ export class ContactResource implements IResourceStrategy {
 						name: 'Get Custom Fields',
 						value: 'getCustomFields',
 						action: 'Get custom fields',
-					},
-					{
-						name: 'Get Many',
-						value: 'getMany',
-						description: 'Get many contacts',
-						action: 'Get many contacts',
 					},
 					{
 						name: 'Get Team',
@@ -161,23 +155,21 @@ export class ContactResource implements IResourceStrategy {
 				operations: ['delete'],
 			}),
 
-			// Get fields
-			FieldDefinitionUtils.createStringField({
-				name: 'contactId',
-				displayName: 'Contact ID',
-				description: 'ID of the contact to get',
-				required: true,
-				operations: ['get'],
-			}),
-
-			// Get Many fields
-			FieldDefinitionUtils.createNumberField({
-				name: 'limit',
-				displayName: 'Limit',
-				description: 'Maximum number of contacts to return',
+			// Find fields
+			FieldDefinitionUtils.createEmailField({
+				name: 'email',
+				displayName: 'Email',
+				description: 'Email address of the contact to find',
 				required: false,
-				operations: ['getMany'],
-				default: 100,
+				operations: ['find'],
+			}),
+			FieldDefinitionUtils.createStringField({
+				name: 'linkedinUrl',
+				displayName: 'LinkedIn URL',
+				description: 'LinkedIn profile URL to find the contact',
+				required: false,
+				operations: ['find'],
+				placeholder: 'https://linkedin.com/in/profile',
 			}),
 		];
 	}
@@ -197,10 +189,8 @@ export class ContactResource implements IResourceStrategy {
 				return this.handleUpdateContact(context, itemIndex, apiService);
 			case 'delete':
 				return this.handleDeleteContact(context, itemIndex, apiService);
-			case 'get':
-				return this.handleGetContact(context, itemIndex, apiService);
-			case 'getMany':
-				return this.handleGetManyContacts(context, itemIndex, apiService);
+			case 'find':
+				return this.handleFindContact(context, itemIndex, apiService);
 			case 'getTeam':
 				return this.handleGetTeam(context, apiService);
 			case 'getConversion':
@@ -268,28 +258,29 @@ export class ContactResource implements IResourceStrategy {
 		return ResponseUtils.formatSuccessResponse(`Contact deleted successfully: ${contactId}`);
 	}
 
-	private async handleGetContact(
+	private async handleFindContact(
 		context: IExecuteFunctions,
 		itemIndex: number,
 		apiService: NextLeadApiService,
 	): Promise<INodeExecutionData[]> {
-		const contactId = context.getNodeParameter('contactId', itemIndex) as string;
+		const email = context.getNodeParameter('email', itemIndex, '') as string;
+		const linkedinUrl = context.getNodeParameter('linkedinUrl', itemIndex, '') as string;
 
-		const response = await apiService.findContact(context, { id: contactId });
+		if (!email && !linkedinUrl) {
+			throw new Error('Either email or LinkedIn URL must be provided');
+		}
+
+		const searchData: IDataObject = {};
+		if (email) {
+			searchData.email = email;
+		}
+		if (linkedinUrl) {
+			searchData.linkedin_url = linkedinUrl;
+		}
+
+		const response = await apiService.findContact(context, searchData);
 
 		return ResponseUtils.formatSingleResponse(response);
-	}
-
-	private async handleGetManyContacts(
-		context: IExecuteFunctions,
-		itemIndex: number,
-		apiService: NextLeadApiService,
-	): Promise<INodeExecutionData[]> {
-		const limit = context.getNodeParameter('limit', itemIndex) as number;
-
-		const response = await apiService.findContact(context, { limit });
-
-		return ResponseUtils.formatArrayResponse(response);
 	}
 
 	private async handleGetTeam(

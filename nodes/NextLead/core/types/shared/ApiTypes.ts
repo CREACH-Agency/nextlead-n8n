@@ -24,6 +24,7 @@ export type OperationType =
 	| 'delete'
 	| 'get'
 	| 'getMany'
+	| 'find'
 	| 'getTeam'
 	| 'getConversion'
 	| 'getCustomFields'
