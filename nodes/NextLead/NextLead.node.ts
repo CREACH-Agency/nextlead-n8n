@@ -15,6 +15,7 @@ import { StructureResource } from './resources/StructureResource';
 import { SaleResource } from './resources/SaleResource';
 import { ActionResource } from './resources/ActionResource';
 import { ListResource } from './resources/ListResource';
+import { IdentifyResource } from './resources/IdentifyResource';
 import { NextLeadErrorHandler } from './core/NextLeadErrorHandler';
 import { ResourceType, OperationType } from './core/types/NextLeadTypes';
 import { ConversionStatus } from './core/types/shared/ApiTypes';
@@ -68,6 +69,10 @@ export class NextLead implements INodeType {
 						value: 'contact',
 					},
 					{
+						name: 'Identify',
+						value: 'identify',
+					},
+					{
 						name: 'List',
 						value: 'list',
 					},
@@ -103,6 +108,7 @@ export class NextLead implements INodeType {
 		manager.register(new SaleResource());
 		manager.register(new ActionResource());
 		manager.register(new ListResource());
+		manager.register(new IdentifyResource());
 		return manager;
 	}
 
@@ -165,6 +171,136 @@ export class NextLead implements INodeType {
 						return response.map((column: { id: string; name: string }) => ({
 							name: column.name,
 							value: column.id,
+						}));
+					}
+
+					return [];
+				} catch (error) {
+					return [];
+				}
+			},
+			async getActionColumns(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				try {
+					const credentials = (await this.getCredentials('nextLeadApi')) as NextLeadCredentials;
+					const requestOptions = {
+						method: 'GET' as const,
+						url: `${credentials.domain}/api/v2/receive/actions/get-columns`,
+						headers: {
+							Authorization: `Bearer ${credentials.apiKey}`,
+						},
+						json: true,
+					};
+
+					const response = await this.helpers.request(requestOptions);
+
+					if (Array.isArray(response)) {
+						return response.map((column: { id: string; name: string }) => ({
+							name: column.name,
+							value: column.id,
+						}));
+					}
+
+					return [];
+				} catch (error) {
+					return [];
+				}
+			},
+			async getTeamMembers(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				try {
+					const credentials = (await this.getCredentials('nextLeadApi')) as NextLeadCredentials;
+					const requestOptions = {
+						method: 'GET' as const,
+						url: `${credentials.domain}/api/v2/receive/contact/get-team`,
+						headers: {
+							Authorization: `Bearer ${credentials.apiKey}`,
+						},
+						json: true,
+					};
+
+					const response = await this.helpers.request(requestOptions);
+
+					if (Array.isArray(response)) {
+						return response.map((member: { id: string; name: string }) => ({
+							name: member.name,
+							value: member.id,
+						}));
+					}
+
+					return [];
+				} catch (error) {
+					return [];
+				}
+			},
+			async getEstablishments(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				try {
+					const credentials = (await this.getCredentials('nextLeadApi')) as NextLeadCredentials;
+					const requestOptions = {
+						method: 'GET' as const,
+						url: `${credentials.domain}/api/v2/receive/structure/get-structures`,
+						headers: {
+							Authorization: `Bearer ${credentials.apiKey}`,
+						},
+						json: true,
+					};
+
+					const response = await this.helpers.request(requestOptions);
+
+					if (Array.isArray(response)) {
+						return response.map((structure: { id: string; name: string }) => ({
+							name: structure.name,
+							value: structure.id,
+						}));
+					}
+
+					return [];
+				} catch (error) {
+					return [];
+				}
+			},
+			async getLists(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				try {
+					const credentials = (await this.getCredentials('nextLeadApi')) as NextLeadCredentials;
+					const requestOptions = {
+						method: 'GET' as const,
+						url: `${credentials.domain}/api/v2/receive/lists/get-lists`,
+						headers: {
+							Authorization: `Bearer ${credentials.apiKey}`,
+						},
+						json: true,
+					};
+
+					const response = await this.helpers.request(requestOptions);
+
+					if (Array.isArray(response)) {
+						return response.map((list: { id: string; name: string }) => ({
+							name: list.name,
+							value: list.id,
+						}));
+					}
+
+					return [];
+				} catch (error) {
+					return [];
+				}
+			},
+			async getCustomFieldTypes(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				try {
+					const credentials = (await this.getCredentials('nextLeadApi')) as NextLeadCredentials;
+					const requestOptions = {
+						method: 'GET' as const,
+						url: `${credentials.domain}/api/v2/receive/contact/get-custom-fields`,
+						headers: {
+							Authorization: `Bearer ${credentials.apiKey}`,
+						},
+						json: true,
+					};
+
+					const response = await this.helpers.request(requestOptions);
+
+					if (Array.isArray(response)) {
+						return response.map((field: { id: string; name: string; groupName?: string }) => ({
+							name: field.groupName ? `${field.groupName} > ${field.name}` : field.name,
+							value: field.id,
 						}));
 					}
 

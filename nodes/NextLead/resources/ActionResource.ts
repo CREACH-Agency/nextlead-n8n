@@ -55,13 +55,24 @@ export class ActionResource implements IResourceStrategy {
 	getFields(): INodeProperties[] {
 		return [
 			// Create fields
-			FieldDefinitionUtils.createStringField({
+			{
+				displayName: 'Stage Name or ID',
 				name: 'column',
-				displayName: 'Column ID',
-				description: 'ID of the column/stage',
+				type: 'options',
 				required: true,
-				operations: ['create'],
-			}),
+				displayOptions: {
+					show: {
+						resource: ['action'],
+						operation: ['create'],
+					},
+				},
+				typeOptions: {
+					loadOptionsMethod: 'getActionColumns',
+				},
+				default: '',
+				description:
+					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+			},
 			FieldDefinitionUtils.createStringField({
 				name: 'title',
 				displayName: 'Title',
