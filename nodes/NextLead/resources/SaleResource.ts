@@ -56,26 +56,31 @@ export class SaleResource implements IResourceStrategy {
 		return [
 			// Create fields
 			FieldDefinitionUtils.createStringField({
-				name: 'contactId',
-				displayName: 'Contact ID',
-				description: 'ID of the contact',
-				required: true,
-				operations: ['create'],
-			}),
-			FieldDefinitionUtils.createStringField({
-				name: 'columnId',
-				displayName: 'Column ID',
-				description: 'ID of the column',
-				required: true,
-				operations: ['create'],
-			}),
-			FieldDefinitionUtils.createStringField({
 				name: 'name',
 				displayName: 'Name',
 				description: 'Name of the sale',
 				required: true,
 				operations: ['create'],
 			}),
+			// Column field with dynamic loading
+			{
+				displayName: 'Stage Name or ID',
+				name: 'column',
+				type: 'options',
+				required: true,
+				displayOptions: {
+					show: {
+						resource: ['sale'],
+						operation: ['create'],
+					},
+				},
+				typeOptions: {
+					loadOptionsMethod: 'getSaleColumns',
+				},
+				default: '',
+				description:
+					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+			},
 			FieldDefinitionUtils.createCollectionField({
 				name: 'additionalFields',
 				displayName: 'Additional Fields',
@@ -83,16 +88,44 @@ export class SaleResource implements IResourceStrategy {
 				operations: ['create'],
 				fields: [
 					{
-						displayName: 'Amount',
-						name: 'amount',
-						description: 'Sale amount',
-						default: 0,
+						displayName: 'Description',
+						name: 'description',
+						description: 'Sale description',
 					},
 					{
-						displayName: 'Probability',
-						name: 'probability',
-						description: 'Probability of closing the sale (0-100)',
-						default: 0,
+						displayName: 'Value',
+						name: 'value',
+						description: 'Sale value/amount',
+					},
+					{
+						displayName: 'Success Rate',
+						name: 'success_rate',
+						description: 'Success rate percentage (0-100)',
+					},
+					{
+						displayName: 'Priority',
+						name: 'priority',
+						description: 'Sale priority (LOW, NORMAL, HIGH)',
+					},
+					{
+						displayName: 'Close Date',
+						name: 'closeDate',
+						description: 'Expected close date for the sale (YYYY-MM-DD)',
+					},
+					{
+						displayName: 'Assigned To ID',
+						name: 'assignedToId',
+						description: 'ID of the user assigned to this sale',
+					},
+					{
+						displayName: 'Contact Email',
+						name: 'contact',
+						description: 'Email of the contact (will be resolved to contactId)',
+					},
+					{
+						displayName: 'Contact ID',
+						name: 'contactId',
+						description: 'Direct contact ID (use this or Contact Email)',
 					},
 				],
 			}),
@@ -168,9 +201,8 @@ export class SaleResource implements IResourceStrategy {
 		itemIndex: number,
 		apiService: NextLeadApiService,
 	): Promise<INodeExecutionData[]> {
-		const contactId = context.getNodeParameter('contactId', itemIndex) as string;
-		const columnId = context.getNodeParameter('columnId', itemIndex) as string;
 		const name = context.getNodeParameter('name', itemIndex) as string;
+		const column = context.getNodeParameter('column', itemIndex) as string;
 		const additionalFields = context.getNodeParameter(
 			'additionalFields',
 			itemIndex,
@@ -178,9 +210,8 @@ export class SaleResource implements IResourceStrategy {
 		) as IDataObject;
 
 		const saleData: IDataObject = {
-			contactId,
-			columnId,
 			name,
+			column,
 			...additionalFields,
 		};
 

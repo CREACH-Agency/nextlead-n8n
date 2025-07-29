@@ -45,6 +45,13 @@ export class NextLead implements INodeType {
 				required: true,
 			},
 		],
+		requestDefaults: {
+			baseURL: '={{$credentials.domain}}',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/json',
+			},
+		},
 		properties: [
 			{
 				displayName: 'Resource',
@@ -111,32 +118,58 @@ export class NextLead implements INodeType {
 		loadOptions: {
 			async getConversionStatuses(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				try {
-					const credentials = await this.getCredentials('nextLeadApi') as NextLeadCredentials;
+					const credentials = (await this.getCredentials('nextLeadApi')) as NextLeadCredentials;
 					// For loadOptions, we'll make a direct HTTP request instead of using the service
 					const requestOptions = {
 						method: 'GET' as const,
 						url: `${credentials.domain}/api/v2/receive/contact/get-conversion`,
 						headers: {
-							'Authorization': `Bearer ${credentials.apiKey}`,
+							Authorization: `Bearer ${credentials.apiKey}`,
 						},
 						json: true,
 					};
-					
+
 					const response = await this.helpers.request(requestOptions);
-					
+
 					if (Array.isArray(response)) {
 						return (response as ConversionStatus[]).map((status) => ({
 							name: status.name,
 							value: status.id,
 						}));
 					}
-					
+
 					// If API call fails, return empty array
 					// The user must configure conversion statuses in NextLead first
 					return [];
 				} catch (error) {
 					// Return empty array on error
 					// The user must configure conversion statuses in NextLead first
+					return [];
+				}
+			},
+			async getSaleColumns(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				try {
+					const credentials = (await this.getCredentials('nextLeadApi')) as NextLeadCredentials;
+					const requestOptions = {
+						method: 'GET' as const,
+						url: `${credentials.domain}/api/v2/receive/sales/get-columns`,
+						headers: {
+							Authorization: `Bearer ${credentials.apiKey}`,
+						},
+						json: true,
+					};
+
+					const response = await this.helpers.request(requestOptions);
+
+					if (Array.isArray(response)) {
+						return response.map((column: { id: string; name: string }) => ({
+							name: column.name,
+							value: column.id,
+						}));
+					}
+
+					return [];
+				} catch (error) {
 					return [];
 				}
 			},
