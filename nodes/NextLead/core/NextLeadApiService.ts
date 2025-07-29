@@ -59,6 +59,13 @@ export class NextLeadApiService {
 		}
 	}
 
+	async identifyUser(context: IExecuteFunctions): Promise<NextLeadApiResponse> {
+		return this.makeRequest(context, {
+			method: 'GET',
+			endpoint: '/api/v2/identify-user',
+		});
+	}
+
 	async createContact(
 		context: IExecuteFunctions,
 		contactData: IDataObject,
@@ -81,11 +88,14 @@ export class NextLeadApiService {
 		});
 	}
 
-	async deleteContact(context: IExecuteFunctions, contactId: string): Promise<NextLeadApiResponse> {
+	async deleteContact(
+		context: IExecuteFunctions,
+		contactData: IDataObject,
+	): Promise<NextLeadApiResponse> {
 		return this.makeRequest(context, {
 			method: 'POST',
 			endpoint: '/api/v2/receive/contact/delete-contact',
-			data: { id: contactId },
+			data: contactData,
 		});
 	}
 
@@ -183,18 +193,14 @@ export class NextLeadApiService {
 		});
 	}
 
-	async deleteSale(context: IExecuteFunctions, contactEmail: string): Promise<NextLeadApiResponse> {
+	async deleteSale(
+		context: IExecuteFunctions,
+		saleData: IDataObject,
+	): Promise<NextLeadApiResponse> {
 		return this.makeRequest(context, {
 			method: 'DELETE',
 			endpoint: '/api/v2/receive/sales/delete-sale',
-			data: { contact_email: contactEmail },
-		});
-	}
-
-	async getSalesColumns(context: IExecuteFunctions): Promise<NextLeadApiResponse> {
-		return this.makeRequest(context, {
-			method: 'GET',
-			endpoint: '/api/v2/receive/sales/get-columns',
+			data: saleData,
 		});
 	}
 

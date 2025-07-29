@@ -26,7 +26,7 @@ export interface ConversionStatus {
 	organizationId?: string;
 }
 
-export type ResourceType = 'contact' | 'structure' | 'sale' | 'action' | 'list';
+export type ResourceType = 'contact' | 'structure' | 'sale' | 'action' | 'list' | 'identify';
 
 export type OperationType =
 	| 'create'
@@ -38,7 +38,8 @@ export type OperationType =
 	| 'getTeam'
 	| 'getConversion'
 	| 'getCustomFields'
-	| 'getColumns';
+	| 'getColumns'
+	| 'user';
 
 export interface ResourceOperation {
 	name: string;
