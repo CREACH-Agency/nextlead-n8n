@@ -54,98 +54,43 @@ export const contactOperations: INodeProperties[] = [
 ];
 
 const createFields = [
-	FieldDefinitionUtils.createEmailField({
-		name: 'email',
-		displayName: 'Email',
-		description: 'Email address of the contact',
-		required: true,
-		operations: ['create'],
-	}),
-	{
-		displayName: 'Civility',
-		name: 'civility',
-		type: 'options' as const,
-		required: true,
-		displayOptions: { show: { resource: ['contact'], operation: ['create'] } },
-		options: [
-			{ name: 'M.', value: 'M' },
-			{ name: 'Mme', value: 'MME' },
-			{ name: 'Neutre', value: 'NEUTRAL' },
-		],
-		default: 'M',
-		description: 'Civility of the contact',
-	},
-	FieldDefinitionUtils.createStringField({
-		name: 'firstName',
-		displayName: 'First Name',
-		description: 'First name of the contact',
-		required: false,
-		operations: ['create'],
-	}),
-	FieldDefinitionUtils.createStringField({
-		name: 'lastName',
-		displayName: 'Last Name',
-		description: 'Last name of the contact',
-		required: false,
-		operations: ['create'],
-	}),
-	{
-		displayName: 'Conversion Status Name or ID',
-		name: 'conversionStatusId',
-		type: 'options' as const,
-		displayOptions: { show: { resource: ['contact'], operation: ['create'] } },
-		typeOptions: { loadOptionsMethod: 'getConversionStatuses' },
-		default: '',
-		description:
-			'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
-	},
-	FieldDefinitionUtils.createStringField({
-		name: 'activity',
-		displayName: 'Job/Activity',
-		description: 'Job or activity of the contact',
-		required: false,
-		operations: ['create'],
-	}),
-	FieldDefinitionUtils.createStringField({
-		name: 'phone',
-		displayName: 'Phone',
-		description: 'Phone number of the contact',
-		required: false,
-		operations: ['create'],
-	}),
-	{
-		displayName: 'Establishment Name or ID',
-		name: 'establishmentId',
-		type: 'options' as const,
-		displayOptions: { show: { resource: ['contact'], operation: ['create'] } },
-		typeOptions: { loadOptionsMethod: 'getEstablishments' },
-		default: '',
-		description:
-			'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
-	},
-	{
-		displayName: 'List Name or ID',
-		name: 'listId',
-		type: 'options' as const,
-		displayOptions: { show: { resource: ['contact'], operation: ['create'] } },
-		typeOptions: { loadOptionsMethod: 'getLists' },
-		default: '',
-		description:
-			'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
-	},
 	FieldDefinitionUtils.createCollectionField({
-		name: 'additionalFields',
-		displayName: 'Additional Fields',
-		description: 'Additional fields for the contact',
+		name: 'contactFields',
+		displayName: 'Contact Information',
+		description: 'Basic contact information',
 		operations: ['create'],
 		fields: [
-			...FieldDefinitionUtils.getCommonContactFields(),
-			{ displayName: 'Mobile', name: 'mobile', description: 'Mobile phone number' },
-			{ displayName: 'Phone Pro', name: 'phonePro', description: 'Professional phone number' },
-			{
-				displayName: 'Comment',
-				name: 'comment',
-				description: 'Additional comments about the contact',
+			{ name: 'email', displayName: 'Email', description: 'Email address of the contact' },
+			{ name: 'firstName', displayName: 'First Name', description: 'First name of the contact' },
+			{ name: 'lastName', displayName: 'Last Name', description: 'Last name of the contact' },
+			{ name: 'phone', displayName: 'Phone', description: 'Phone number of the contact' },
+			{ name: 'activity', displayName: 'Job/Activity', description: 'Job or activity of the contact' },
+			{ name: 'civility', displayName: 'Civility', description: 'Civility of the contact (M, MME, or NEUTRAL - default: NEUTRAL)' },
+			{ name: 'mobile', displayName: 'Mobile', description: 'Mobile phone number' },
+			{ name: 'phonePro', displayName: 'Phone Pro', description: 'Professional phone number' },
+			{ name: 'comment', displayName: 'Comment', description: 'Additional comments about the contact' },
+		],
+	}),
+	FieldDefinitionUtils.createCollectionField({
+		name: 'organizationFields',
+		displayName: 'Organization Settings',
+		description: 'Organization-related settings',
+		operations: ['create'],
+		fields: [
+			{ 
+				name: 'conversionStatusId', 
+				displayName: 'Conversion Status ID', 
+				description: 'ID of the conversion status (from Get Conversion operation)' 
+			},
+			{ 
+				name: 'establishmentId', 
+				displayName: 'Establishment ID', 
+				description: 'ID of the establishment' 
+			},
+			{ 
+				name: 'listId', 
+				displayName: 'List ID', 
+				description: 'ID of the list to add the contact to' 
 			},
 		],
 	}),

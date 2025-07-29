@@ -52,30 +52,22 @@ export class ContactResource implements IResourceStrategy {
 		itemIndex: number,
 		apiService: NextLeadApiService,
 	): Promise<INodeExecutionData[]> {
-		const contactData: IDataObject = {
-			email: context.getNodeParameter('email', itemIndex) as string,
-			civility: context.getNodeParameter('civility', itemIndex) as string,
-			...(context.getNodeParameter('firstName', itemIndex, '') && {
-				firstName: context.getNodeParameter('firstName', itemIndex) as string,
-			}),
-			...(context.getNodeParameter('lastName', itemIndex, '') && {
-				lastName: context.getNodeParameter('lastName', itemIndex) as string,
-			}),
-			...(context.getNodeParameter('conversionStatusId', itemIndex, '') && {
-				conversionStatusId: context.getNodeParameter('conversionStatusId', itemIndex) as string,
-			}),
-			...(context.getNodeParameter('activity', itemIndex, '') && {
-				activity: context.getNodeParameter('activity', itemIndex) as string,
-			}),
-			...(context.getNodeParameter('phone', itemIndex, '') && {
-				phone: context.getNodeParameter('phone', itemIndex) as string,
-			}),
-			...(context.getNodeParameter('establishmentId', itemIndex, '') && {
-				establishmentId: context.getNodeParameter('establishmentId', itemIndex) as string,
-			}),
-			...(context.getNodeParameter('listId', itemIndex, '') && {
-				listId: context.getNodeParameter('listId', itemIndex) as string,
-			}),
+		// Get contact fields from collections
+		const contactFields = ContactHelpers.cleanFields(
+			context.getNodeParameter('contactFields', itemIndex, {}) as IDataObject,
+		);
+		const organizationFields = ContactHelpers.cleanFields(
+			context.getNodeParameter('organizationFields', itemIndex, {}) as IDataObject,
+		);
+		
+		const contactData: IDataObject = { 
+			...contactFields, 
+			...organizationFields,
+			// Set default values for required fields if not provided
+			...((!contactFields.civility && !organizationFields.civility) && { civility: 'NEUTRAL' }),
+			...((!contactFields.firstName && !organizationFields.firstName) && { firstName: '' }),
+			...((!contactFields.lastName && !organizationFields.lastName) && { lastName: '' }),
+			...((!contactFields.email && !organizationFields.email) && { email: '' })
 		};
 
 		// Transform complex fields
@@ -95,11 +87,10 @@ export class ContactResource implements IResourceStrategy {
 		if (nextlead_config.length > 0) contactData.nextlead_config = nextlead_config;
 		if (custom_fields.length > 0) contactData.custom_fields = custom_fields;
 
-		// Add additional fields
-		const additionalFields = ContactHelpers.cleanFields(
-			context.getNodeParameter('additionalFields', itemIndex, {}) as IDataObject,
-		);
-		Object.assign(contactData, additionalFields);
+		// Check if at least one field is provided
+		if (Object.keys(contactData).length === 0 && socials.length === 0 && nextlead_config.length === 0 && custom_fields.length === 0) {
+			throw new Error('At least one field must be provided to create a contact');
+		}
 
 		context.logger.info('Creating contact with data:', contactData);
 		return ResponseUtils.formatSingleResponse(await apiService.createContact(context, contactData));
