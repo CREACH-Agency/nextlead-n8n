@@ -34,8 +34,6 @@ export class SaleResource implements IResourceStrategy {
 				return this.handleUpdateSale(context, itemIndex, apiService);
 			case 'delete':
 				return this.handleDeleteSale(context, itemIndex, apiService);
-			case 'getColumns':
-				return this.handleGetColumns(context, apiService);
 			default:
 				throw new Error(`Unknown operation: ${operation}`);
 		}
@@ -101,14 +99,5 @@ export class SaleResource implements IResourceStrategy {
 		return ResponseUtils.formatSuccessResponse(
 			`Sale deleted successfully for contact: ${contactEmail}`,
 		);
-	}
-
-	private async handleGetColumns(
-		context: IExecuteFunctions,
-		apiService: NextLeadApiService,
-	): Promise<INodeExecutionData[]> {
-		const response = await apiService.getSalesColumns(context);
-
-		return ResponseUtils.formatArrayResponse(response);
 	}
 }

@@ -153,32 +153,6 @@ export class NextLead implements INodeType {
 					return [];
 				}
 			},
-			async getSaleColumns(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				try {
-					const credentials = (await this.getCredentials('nextLeadApi')) as NextLeadCredentials;
-					const requestOptions = {
-						method: 'GET' as const,
-						url: `${credentials.domain}/api/v2/receive/sales/get-columns`,
-						headers: {
-							Authorization: `Bearer ${credentials.apiKey}`,
-						},
-						json: true,
-					};
-
-					const response = await this.helpers.request(requestOptions);
-
-					if (Array.isArray(response)) {
-						return response.map((column: { id: string; name: string }) => ({
-							name: column.name,
-							value: column.id,
-						}));
-					}
-
-					return [];
-				} catch (error) {
-					return [];
-				}
-			},
 			async getActionColumns(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				try {
 					const credentials = (await this.getCredentials('nextLeadApi')) as NextLeadCredentials;

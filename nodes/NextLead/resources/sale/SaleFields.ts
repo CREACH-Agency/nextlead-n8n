@@ -24,12 +24,6 @@ export const saleOperations: INodeProperties[] = [
 				action: 'Delete a sale',
 			},
 			{
-				name: 'Get Columns',
-				value: 'getColumns',
-				description: 'Get sale columns',
-				action: 'Get sale columns',
-			},
-			{
 				name: 'Update',
 				value: 'update',
 				description: 'Update a sale',
@@ -48,25 +42,15 @@ const createFields = [
 		required: true,
 		operations: ['create'],
 	}),
-	// Column field with dynamic loading
-	{
-		displayName: 'Stage Name or ID',
+	// Column field - now just a string input
+	FieldDefinitionUtils.createStringField({
 		name: 'column',
-		type: 'options' as const,
+		displayName: 'Stage',
+		description: 'Stage/Column for the sale',
 		required: true,
-		displayOptions: {
-			show: {
-				resource: ['sale'],
-				operation: ['create'],
-			},
-		},
-		typeOptions: {
-			loadOptionsMethod: 'getSaleColumns',
-		},
-		default: '',
-		description:
-			'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
-	},
+		operations: ['create'],
+		placeholder: 'e.g. Prospecting, Negotiation, Closed',
+	}),
 	FieldDefinitionUtils.createCollectionField({
 		name: 'additionalFields',
 		displayName: 'Additional Fields',
@@ -142,13 +126,9 @@ const updateFields = [
 				description: 'New description',
 			},
 			{
-				displayName: 'Stage Name or ID',
+				displayName: 'Stage',
 				name: 'column',
-				description:
-					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
-				typeOptions: {
-					loadOptionsMethod: 'getSaleColumns',
-				},
+				description: 'New stage/column for the sale',
 			},
 			{
 				displayName: 'Value',

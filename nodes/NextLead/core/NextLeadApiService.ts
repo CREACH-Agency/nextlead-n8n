@@ -204,13 +204,6 @@ export class NextLeadApiService {
 		});
 	}
 
-	async getSalesColumns(context: IExecuteFunctions): Promise<NextLeadApiResponse> {
-		return this.makeRequest(context, {
-			method: 'GET',
-			endpoint: '/api/v2/receive/sales/get-columns',
-		});
-	}
-
 	async createAction(
 		context: IExecuteFunctions,
 		actionData: IDataObject,
