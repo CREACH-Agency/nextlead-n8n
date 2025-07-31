@@ -1,4 +1,4 @@
-# n8n-nodes-nextlead
+# NextLead - n8n
 
 NextLead CRM integration for n8n workflows.
 
