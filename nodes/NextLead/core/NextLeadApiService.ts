@@ -1,4 +1,4 @@
-import { IExecuteFunctions, IDataObject } from 'n8n-workflow';
+import { IExecuteFunctions, IDataObject, IPollFunctions } from 'n8n-workflow';
 import { NextLeadCredentials, RequestConfig, N8nRequestOptions } from './types/n8n/RequestTypes';
 import { NextLeadApiResponse } from './types/shared/ApiTypes';
 import { createNextLeadError } from './types/n8n/ErrorTypes';
@@ -11,12 +11,12 @@ export class NextLeadApiService {
 	}
 
 	async makeRequest(
-		context: IExecuteFunctions,
+		context: IExecuteFunctions | IPollFunctions,
 		config: RequestConfig,
 	): Promise<NextLeadApiResponse> {
-		try {
-			const { method, endpoint, data, queryParams } = config;
+		const { method, endpoint, data, queryParams } = config;
 
+		try {
 			// Debug log
 			context.logger.info('NextLead API Request:', {
 				method,
@@ -51,6 +51,24 @@ export class NextLeadApiService {
 			};
 		} catch (error: unknown) {
 			const nextLeadError = createNextLeadError(error);
+
+			if (nextLeadError.statusCode === 403) {
+				context.logger.error('403 Forbidden Error Details:', {
+					endpoint,
+					statusCode: nextLeadError.statusCode,
+					message: nextLeadError.message,
+					details: nextLeadError.details,
+					rawError: error,
+				});
+
+				if (error && typeof error === 'object' && 'response' in error) {
+					const errorResponse = error as { response?: { body?: unknown } };
+					context.logger.error('Raw error response body:', {
+						body: errorResponse.response?.body,
+					});
+				}
+			}
+
 			return {
 				success: false,
 				error: nextLeadError.message,
@@ -255,6 +273,78 @@ export class NextLeadApiService {
 		return this.makeRequest(context, {
 			method: 'GET',
 			endpoint: '/api/v2/receive/lists/get-lists',
+		});
+	}
+
+	async pollContactsCreated(
+		context: IExecuteFunctions | IPollFunctions,
+	): Promise<NextLeadApiResponse> {
+		return this.makeRequest(context, {
+			method: 'GET',
+			endpoint: '/api/v2/polling/contact/user-created',
+		});
+	}
+
+	async pollContactsUpdated(
+		context: IExecuteFunctions | IPollFunctions,
+	): Promise<NextLeadApiResponse> {
+		return this.makeRequest(context, {
+			method: 'GET',
+			endpoint: '/api/v2/polling/contact/user-edited',
+		});
+	}
+
+	async pollContactsDeleted(
+		context: IExecuteFunctions | IPollFunctions,
+	): Promise<NextLeadApiResponse> {
+		return this.makeRequest(context, {
+			method: 'GET',
+			endpoint: '/api/v2/polling/contact/user-deleted',
+		});
+	}
+
+	async pollStructuresCreated(
+		context: IExecuteFunctions | IPollFunctions,
+	): Promise<NextLeadApiResponse> {
+		return this.makeRequest(context, {
+			method: 'GET',
+			endpoint: '/api/v2/polling/structures/structure-created',
+		});
+	}
+
+	async pollStructuresUpdated(
+		context: IExecuteFunctions | IPollFunctions,
+	): Promise<NextLeadApiResponse> {
+		return this.makeRequest(context, {
+			method: 'GET',
+			endpoint: '/api/v2/polling/structures/structure-edited',
+		});
+	}
+
+	async pollStructuresDeleted(
+		context: IExecuteFunctions | IPollFunctions,
+	): Promise<NextLeadApiResponse> {
+		return this.makeRequest(context, {
+			method: 'GET',
+			endpoint: '/api/v2/polling/structures/structure-deleted',
+		});
+	}
+
+	async pollEmailAddedToList(
+		context: IExecuteFunctions | IPollFunctions,
+	): Promise<NextLeadApiResponse> {
+		return this.makeRequest(context, {
+			method: 'GET',
+			endpoint: '/api/v2/polling/email/added-to-list',
+		});
+	}
+
+	async pollEmailRemovedFromList(
+		context: IExecuteFunctions | IPollFunctions,
+	): Promise<NextLeadApiResponse> {
+		return this.makeRequest(context, {
+			method: 'GET',
+			endpoint: '/api/v2/polling/email/deleted-from-list',
 		});
 	}
 }

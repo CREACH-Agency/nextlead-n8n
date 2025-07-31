@@ -52,7 +52,10 @@ export class ContactResource implements IResourceStrategy {
 		itemIndex: number,
 		apiService: NextLeadApiService,
 	): Promise<INodeExecutionData[]> {
-		// Get contact fields from collections
+		const email = context.getNodeParameter('email', itemIndex) as string;
+		const firstName = context.getNodeParameter('firstName', itemIndex) as string;
+		const lastName = context.getNodeParameter('lastName', itemIndex) as string;
+
 		const contactFields = ContactHelpers.cleanFields(
 			context.getNodeParameter('contactFields', itemIndex, {}) as IDataObject,
 		);
@@ -61,16 +64,14 @@ export class ContactResource implements IResourceStrategy {
 		);
 
 		const contactData: IDataObject = {
+			email,
+			firstName,
+			lastName,
+			civility: contactFields.civility || organizationFields.civility || 'NEUTRAL',
 			...contactFields,
 			...organizationFields,
-			// Set default values for required fields if not provided
-			...(!contactFields.civility && !organizationFields.civility && { civility: 'NEUTRAL' }),
-			...(!contactFields.firstName && !organizationFields.firstName && { firstName: '' }),
-			...(!contactFields.lastName && !organizationFields.lastName && { lastName: '' }),
-			...(!contactFields.email && !organizationFields.email && { email: '' }),
 		};
 
-		// Transform complex fields
 		const socials = ContactHelpers.transformComplexField(
 			context.getNodeParameter('socials', itemIndex, {}) as IDataObject,
 			'social',
@@ -86,16 +87,6 @@ export class ContactResource implements IResourceStrategy {
 		if (socials.length > 0) contactData.socials = socials;
 		if (nextlead_config.length > 0) contactData.nextlead_config = nextlead_config;
 		if (custom_fields.length > 0) contactData.custom_fields = custom_fields;
-
-		// Check if at least one field is provided
-		if (
-			Object.keys(contactData).length === 0 &&
-			socials.length === 0 &&
-			nextlead_config.length === 0 &&
-			custom_fields.length === 0
-		) {
-			throw new Error('At least one field must be provided to create a contact');
-		}
 
 		context.logger.info('Creating contact with data:', contactData);
 		return ResponseUtils.formatSingleResponse(await apiService.createContact(context, contactData));

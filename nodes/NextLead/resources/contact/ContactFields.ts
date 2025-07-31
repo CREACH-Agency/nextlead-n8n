@@ -37,6 +37,12 @@ export const contactOperations: INodeProperties[] = [
 			},
 			{ name: 'Get Custom Fields', value: 'getCustomFields', action: 'Get custom fields' },
 			{
+				name: 'Get Limit Status',
+				value: 'getLimitStatus',
+				description: 'Check contact limit and usage',
+				action: 'Get contact limit status',
+			},
+			{
 				name: 'Get Team',
 				value: 'getTeam',
 				description: 'Get team members',
@@ -54,15 +60,55 @@ export const contactOperations: INodeProperties[] = [
 ];
 
 const createFields = [
+	{
+		displayName: 'Email',
+		name: 'email',
+		type: 'string' as const,
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['contact'],
+				operation: ['create'],
+			},
+		},
+		default: '',
+		placeholder: 'name@email.com',
+		description: 'Email address of the contact',
+	},
+	{
+		displayName: 'First Name',
+		name: 'firstName',
+		type: 'string' as const,
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['contact'],
+				operation: ['create'],
+			},
+		},
+		default: '',
+		description: 'First name of the contact',
+	},
+	{
+		displayName: 'Last Name',
+		name: 'lastName',
+		type: 'string' as const,
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['contact'],
+				operation: ['create'],
+			},
+		},
+		default: '',
+		description: 'Last name of the contact',
+	},
 	FieldDefinitionUtils.createCollectionField({
 		name: 'contactFields',
-		displayName: 'Contact Information',
-		description: 'Basic contact information',
+		displayName: 'Additional Contact Information',
+		description: 'Additional contact information',
 		operations: ['create'],
 		fields: [
-			{ name: 'email', displayName: 'Email', description: 'Email address of the contact' },
-			{ name: 'firstName', displayName: 'First Name', description: 'First name of the contact' },
-			{ name: 'lastName', displayName: 'Last Name', description: 'Last name of the contact' },
 			{ name: 'phone', displayName: 'Phone', description: 'Phone number of the contact' },
 			{
 				name: 'activity',
@@ -161,18 +207,10 @@ const createFields = [
 				displayName: 'Config',
 				values: [
 					{
-						displayName: 'Lead Score',
-						name: 'lead_score',
-						type: 'number' as const,
-						default: 0,
-						description: 'Lead score (0-100)',
-						typeOptions: { minValue: 0, maxValue: 100 },
-					},
-					{
-						displayName: 'Conversion Status Name or ID',
-						name: 'conversion_status',
+						displayName: 'Add to List Name or ID',
+						name: 'add_to_list',
 						type: 'options' as const,
-						typeOptions: { loadOptionsMethod: 'getConversionStatuses' },
+						typeOptions: { loadOptionsMethod: 'getLists' },
 						default: '',
 						description:
 							'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
@@ -187,13 +225,21 @@ const createFields = [
 							'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 					},
 					{
-						displayName: 'Add to List Name or ID',
-						name: 'add_to_list',
+						displayName: 'Conversion Status Name or ID',
+						name: 'conversion_status',
 						type: 'options' as const,
-						typeOptions: { loadOptionsMethod: 'getLists' },
+						typeOptions: { loadOptionsMethod: 'getConversionStatuses' },
 						default: '',
 						description:
 							'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+					},
+					{
+						displayName: 'Lead Score',
+						name: 'lead_score',
+						type: 'number' as const,
+						default: 0,
+						description: 'Lead score (0-100)',
+						typeOptions: { minValue: 0, maxValue: 100 },
 					},
 				],
 			},
