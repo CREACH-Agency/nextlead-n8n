@@ -2,9 +2,9 @@ import { IExecuteFunctions, INodeExecutionData, INodeProperties, IDataObject } f
 
 import { ResourceType, OperationType, NextLeadCredentials } from '../core/types/NextLeadTypes';
 import { IResourceStrategy } from '../core/interfaces/IResourceStrategy';
-import { FieldDefinitionUtils } from '../utils/FieldDefinitionUtils';
 import { NextLeadApiService } from '../core/NextLeadApiService';
 import { ResponseUtils } from '../utils/ResponseUtils';
+import { actionOperations, actionFields } from './action/ActionFields';
 
 export class ActionResource implements IResourceStrategy {
 	getResourceType(): ResourceType {
@@ -12,163 +12,11 @@ export class ActionResource implements IResourceStrategy {
 	}
 
 	getOperations(): INodeProperties[] {
-		return [
-			{
-				displayName: 'Operation',
-				name: 'operation',
-				type: 'options',
-				noDataExpression: true,
-				displayOptions: {
-					show: { resource: ['action'] },
-				},
-				options: [
-					{
-						name: 'Create',
-						value: 'create',
-						description: 'Create a new action',
-						action: 'Create an action',
-					},
-					{
-						name: 'Delete',
-						value: 'delete',
-						description: 'Delete an action',
-						action: 'Delete an action',
-					},
-					{
-						name: 'Get Columns',
-						value: 'getColumns',
-						description: 'Get action columns',
-						action: 'Get action columns',
-					},
-					{
-						name: 'Update',
-						value: 'update',
-						description: 'Update an action',
-						action: 'Update an action',
-					},
-				],
-				default: 'create',
-			},
-		];
+		return actionOperations;
 	}
 
 	getFields(): INodeProperties[] {
-		return [
-			// Create fields
-			{
-				displayName: 'Stage Name or ID',
-				name: 'column',
-				type: 'options',
-				required: true,
-				displayOptions: {
-					show: {
-						resource: ['action'],
-						operation: ['create'],
-					},
-				},
-				typeOptions: {
-					loadOptionsMethod: 'getActionColumns',
-				},
-				default: '',
-				description:
-					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
-			},
-			FieldDefinitionUtils.createStringField({
-				name: 'title',
-				displayName: 'Title',
-				description: 'Title of the action',
-				required: false,
-				operations: ['create'],
-			}),
-			FieldDefinitionUtils.createStringField({
-				name: 'assign_contact',
-				displayName: 'Assign Contact',
-				description: 'Email or LinkedIn URL of contact to assign',
-				required: false,
-				operations: ['create'],
-			}),
-			FieldDefinitionUtils.createCollectionField({
-				name: 'additionalFields',
-				displayName: 'Additional Fields',
-				description: 'Additional fields for the action',
-				operations: ['create'],
-				fields: [
-					{
-						displayName: 'Note',
-						name: 'note',
-						description: 'Action description note',
-						default: '',
-					},
-					{
-						displayName: 'Date',
-						name: 'date',
-						description: 'Date for the action',
-						default: '',
-					},
-					{
-						displayName: 'Assigned To',
-						name: 'assigned_to',
-						description: 'User ID to assign the action to',
-						default: '',
-					},
-				],
-			}),
-
-			// Update fields
-			FieldDefinitionUtils.createEmailField({
-				name: 'contactEmail',
-				displayName: 'Contact Email',
-				description: 'Email of the contact whose action to update',
-				required: true,
-				operations: ['update'],
-			}),
-			FieldDefinitionUtils.createCollectionField({
-				name: 'updateFields',
-				displayName: 'Update Fields',
-				description: 'Fields to update',
-				operations: ['update'],
-				fields: [
-					{
-						displayName: 'Title',
-						name: 'title',
-						description: 'Title of the action',
-						default: '',
-					},
-					{
-						displayName: 'Column',
-						name: 'column',
-						description: 'New stage ID for the action',
-						default: '',
-					},
-					{
-						displayName: 'Note',
-						name: 'note',
-						description: 'Action description note',
-						default: '',
-					},
-					{
-						displayName: 'Date',
-						name: 'date',
-						description: 'Date for the action',
-						default: '',
-					},
-					{
-						displayName: 'Assigned To',
-						name: 'assigned_to',
-						description: 'User ID to assign the action to',
-						default: '',
-					},
-				],
-			}),
-
-			// Delete fields
-			FieldDefinitionUtils.createEmailField({
-				name: 'contactEmail',
-				displayName: 'Contact Email',
-				description: 'Email of the contact whose action to delete',
-				operations: ['delete'],
-			}),
-		];
+		return actionFields;
 	}
 
 	async execute(
@@ -198,8 +46,8 @@ export class ActionResource implements IResourceStrategy {
 		itemIndex: number,
 		apiService: NextLeadApiService,
 	): Promise<INodeExecutionData[]> {
+		const title = context.getNodeParameter('title', itemIndex) as string;
 		const column = context.getNodeParameter('column', itemIndex) as string;
-		const title = context.getNodeParameter('title', itemIndex, '') as string;
 		const assign_contact = context.getNodeParameter('assign_contact', itemIndex, '') as string;
 		const additionalFields = context.getNodeParameter(
 			'additionalFields',
@@ -208,8 +56,8 @@ export class ActionResource implements IResourceStrategy {
 		) as IDataObject;
 
 		const actionData: IDataObject = {
+			title,
 			column,
-			...(title && { title }),
 			...(assign_contact && { assign_contact }),
 			...additionalFields,
 		};

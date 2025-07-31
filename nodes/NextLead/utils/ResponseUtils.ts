@@ -24,7 +24,16 @@ export class ResponseUtils {
 			throw new Error(`API Error: ${response.error || 'Unknown error'}`);
 		}
 
-		const items = response.data;
+		let items = response.data;
+
+		if (items && typeof items === 'object' && !Array.isArray(items)) {
+			if ('data' in items && Array.isArray(items.data)) {
+				items = items.data;
+			} else {
+				return [{ json: { items: [] } as IDataObject }];
+			}
+		}
+
 		if (!Array.isArray(items)) {
 			return [{ json: { items: [] } as IDataObject }];
 		}
