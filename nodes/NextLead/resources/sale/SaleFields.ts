@@ -24,6 +24,12 @@ export const saleOperations: INodeProperties[] = [
 				action: 'Delete a sale',
 			},
 			{
+				name: 'Get Columns',
+				value: 'getColumns',
+				description: 'Get sales stages/columns',
+				action: 'Get sales columns',
+			},
+			{
 				name: 'Update',
 				value: 'update',
 				description: 'Update a sale',
@@ -42,15 +48,25 @@ const createFields = [
 		required: true,
 		operations: ['create'],
 	}),
-	// Column field - now just a string input
-	FieldDefinitionUtils.createStringField({
+	// Column field with dynamic loading
+	{
+		displayName: 'Stage Name or ID',
 		name: 'column',
-		displayName: 'Stage',
-		description: 'Stage/Column for the sale',
+		type: 'options' as const,
 		required: true,
-		operations: ['create'],
-		placeholder: 'e.g. Prospecting, Negotiation, Closed',
-	}),
+		displayOptions: {
+			show: {
+				resource: ['sale'],
+				operation: ['create'],
+			},
+		},
+		typeOptions: {
+			loadOptionsMethod: 'getSaleColumns',
+		},
+		default: '',
+		description:
+			'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+	},
 	FieldDefinitionUtils.createCollectionField({
 		name: 'additionalFields',
 		displayName: 'Additional Fields',
@@ -126,9 +142,13 @@ const updateFields = [
 				description: 'New description',
 			},
 			{
-				displayName: 'Stage',
+				displayName: 'Stage Name or ID',
 				name: 'column',
-				description: 'New stage/column for the sale',
+				description:
+					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+				typeOptions: {
+					loadOptionsMethod: 'getSaleColumns',
+				},
 			},
 			{
 				displayName: 'Value',
@@ -161,14 +181,47 @@ const deleteFields = [
 		required: true,
 		operations: ['delete'],
 	}),
-	FieldDefinitionUtils.createStringField({
-		name: 'name',
+	{
+		displayName: 'Delete Strategy',
+		name: 'deleteStrategy',
+		type: 'options' as const,
+		options: [
+			{
+				name: 'Delete Most Recent Sale',
+				value: 'recent',
+				description: 'Delete the most recent sale for this contact',
+			},
+			{
+				name: 'Delete Specific Sale by Name',
+				value: 'byName',
+				description: 'Delete a specific sale by providing its exact name',
+			},
+		],
+		default: 'recent',
+		displayOptions: {
+			show: {
+				resource: ['sale'],
+				operation: ['delete'],
+			},
+		},
+		description: 'Choose how to identify which sale to delete',
+	},
+	{
 		displayName: 'Sale Name',
-		description:
-			'Name of the specific sale to delete (optional - if not provided, deletes the most recent sale)',
-		required: false,
-		operations: ['delete'],
-	}),
+		name: 'name',
+		type: 'string' as const,
+		default: '',
+		displayOptions: {
+			show: {
+				resource: ['sale'],
+				operation: ['delete'],
+				deleteStrategy: ['byName'],
+			},
+		},
+		description: 'Exact name of the sale to delete',
+		placeholder: 'Enter the exact sale name',
+		required: true,
+	},
 ];
 
 export const saleFields: INodeProperties[] = [...createFields, ...updateFields, ...deleteFields];

@@ -64,11 +64,23 @@ const createFields = [
 			{ name: 'firstName', displayName: 'First Name', description: 'First name of the contact' },
 			{ name: 'lastName', displayName: 'Last Name', description: 'Last name of the contact' },
 			{ name: 'phone', displayName: 'Phone', description: 'Phone number of the contact' },
-			{ name: 'activity', displayName: 'Job/Activity', description: 'Job or activity of the contact' },
-			{ name: 'civility', displayName: 'Civility', description: 'Civility of the contact (M, MME, or NEUTRAL - default: NEUTRAL)' },
+			{
+				name: 'activity',
+				displayName: 'Job/Activity',
+				description: 'Job or activity of the contact',
+			},
+			{
+				name: 'civility',
+				displayName: 'Civility',
+				description: 'Civility of the contact (M, MME, or NEUTRAL - default: NEUTRAL)',
+			},
 			{ name: 'mobile', displayName: 'Mobile', description: 'Mobile phone number' },
 			{ name: 'phonePro', displayName: 'Phone Pro', description: 'Professional phone number' },
-			{ name: 'comment', displayName: 'Comment', description: 'Additional comments about the contact' },
+			{
+				name: 'comment',
+				displayName: 'Comment',
+				description: 'Additional comments about the contact',
+			},
 		],
 	}),
 	FieldDefinitionUtils.createCollectionField({
@@ -77,20 +89,20 @@ const createFields = [
 		description: 'Organization-related settings',
 		operations: ['create'],
 		fields: [
-			{ 
-				name: 'conversionStatusId', 
-				displayName: 'Conversion Status ID', 
-				description: 'ID of the conversion status (from Get Conversion operation)' 
+			{
+				name: 'conversionStatusId',
+				displayName: 'Conversion Status ID',
+				description: 'ID of the conversion status (from Get Conversion operation)',
 			},
-			{ 
-				name: 'establishmentId', 
-				displayName: 'Establishment ID', 
-				description: 'ID of the establishment' 
+			{
+				name: 'establishmentId',
+				displayName: 'Establishment ID',
+				description: 'ID of the establishment',
 			},
-			{ 
-				name: 'listId', 
-				displayName: 'List ID', 
-				description: 'ID of the list to add the contact to' 
+			{
+				name: 'listId',
+				displayName: 'List ID',
+				description: 'ID of the list to add the contact to',
 			},
 		],
 	}),

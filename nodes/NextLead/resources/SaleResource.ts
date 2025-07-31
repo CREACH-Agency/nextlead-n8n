@@ -34,6 +34,8 @@ export class SaleResource implements IResourceStrategy {
 				return this.handleUpdateSale(context, itemIndex, apiService);
 			case 'delete':
 				return this.handleDeleteSale(context, itemIndex, apiService);
+			case 'getColumns':
+				return this.handleGetColumns(context, apiService);
 			default:
 				throw new Error(`Unknown operation: ${operation}`);
 		}
@@ -87,17 +89,35 @@ export class SaleResource implements IResourceStrategy {
 		apiService: NextLeadApiService,
 	): Promise<INodeExecutionData[]> {
 		const contactEmail = context.getNodeParameter('contactEmail', itemIndex) as string;
-		const name = context.getNodeParameter('name', itemIndex, '') as string;
+		const deleteStrategy = context.getNodeParameter(
+			'deleteStrategy',
+			itemIndex,
+			'recent',
+		) as string;
 
 		const deleteData: IDataObject = {
 			contact_email: contactEmail,
-			...(name && { name }),
 		};
+
+		if (deleteStrategy === 'byName') {
+			const name = context.getNodeParameter('name', itemIndex) as string;
+			deleteData.name = name;
+		}
 
 		await apiService.deleteSale(context, deleteData);
 
+		const strategy = deleteStrategy === 'recent' ? 'most recent sale' : 'specified sale';
 		return ResponseUtils.formatSuccessResponse(
-			`Sale deleted successfully for contact: ${contactEmail}`,
+			`Sale deleted successfully (${strategy}) for contact: ${contactEmail}`,
 		);
+	}
+
+	private async handleGetColumns(
+		context: IExecuteFunctions,
+		apiService: NextLeadApiService,
+	): Promise<INodeExecutionData[]> {
+		const response = await apiService.getSalesColumns(context);
+
+		return ResponseUtils.formatArrayResponse(response);
 	}
 }
