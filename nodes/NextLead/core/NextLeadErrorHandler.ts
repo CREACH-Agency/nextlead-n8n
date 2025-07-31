@@ -32,6 +32,16 @@ export class NextLeadErrorHandler {
 			});
 		}
 
+		if (nextLeadError.statusCode === 403) {
+			return new NodeOperationError(
+				node,
+				'API Error: Forbidden - perhaps check your credentials?',
+				{
+					description: 'Please check your input data and try again.',
+				},
+			);
+		}
+
 		return new NodeOperationError(node, nextLeadError.message || 'An unexpected error occurred', {
 			description: 'Please check your input data and try again.',
 		});

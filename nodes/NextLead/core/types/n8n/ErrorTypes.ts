@@ -33,6 +33,38 @@ export function createNextLeadError(error: unknown): NextLeadError {
 		return error;
 	}
 
+	if (error && typeof error === 'object' && 'statusCode' in error) {
+		const httpError = error as {
+			statusCode: number;
+			message?: string;
+			body?: string | Record<string, unknown>;
+			response?: { body?: string | Record<string, unknown> };
+			error?: string | Record<string, unknown>;
+		};
+
+		let errorMessage = httpError.message || 'HTTP Error';
+
+		if (typeof httpError.body === 'string' && httpError.body) {
+			errorMessage = httpError.body;
+		} else if (typeof httpError.error === 'string' && httpError.error) {
+			errorMessage = httpError.error;
+		} else if (httpError.response?.body && typeof httpError.response.body === 'string') {
+			errorMessage = httpError.response.body;
+		}
+
+		return {
+			message: errorMessage,
+			code: `HTTP_${httpError.statusCode}`,
+			statusCode: httpError.statusCode,
+			details: {
+				body: httpError.body,
+				response: httpError.response,
+				error: httpError.error,
+				originalError: error,
+			},
+		};
+	}
+
 	if (error instanceof Error) {
 		return {
 			message: error.message,
