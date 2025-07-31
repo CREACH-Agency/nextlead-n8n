@@ -1,68 +1,29 @@
 # n8n-nodes-nextlead
 
-This is an n8n community node. It lets you use NextLead CRM in your n8n workflows.
+NextLead CRM integration for n8n workflows.
 
-NextLead is a CRM solution that helps you manage contacts, structures, sales, and actions.
+## What it does
 
-[n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/reference/license/) workflow automation platform.
+This node connects n8n to NextLead CRM, allowing you to:
 
-[Installation](#installation)  
-[Operations](#operations)  
-[Credentials](#credentials)  
-[Compatibility](#compatibility)  
-[Resources](#resources)  
+- Manage contacts (create, update, delete, find)
+- Manage structures (create, update, delete, list)
+- Manage sales (create, update, delete)
+- Manage actions (create, update, delete)
+- Manage lists
+- React to events with triggers (new contacts, updates, etc.)
 
-## Installation
+## Setup
 
-Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes/installation/) in the n8n community nodes documentation.
+1. Get your API key from NextLead (Settings > Automation > API Key)
+2. Add NextLead credentials in n8n with your API key
+3. Start using NextLead nodes in your workflows
 
-## Operations
+## Requirements
 
-### Contact
-- Create a new contact
-- Update an existing contact
-- Delete a contact
-- Find a contact by email or LinkedIn
-- Get team members
-- Get conversion statuses
-- Get custom fields configuration
-
-### Structure
-- Create a new structure
-- Update an existing structure
-- Delete a structure
-- Get all structures
-
-### Sales
-- Create a new sale
-- Update an existing sale
-- Delete a sale
-- Get sales columns
-
-### Action
-- Create a new action
-- Update an existing action
-- Delete an action
-- Get action columns
-
-### List
-- Get all lists
-
-## Credentials
-
-To use this node, you need to create NextLead API credentials:
-
-1. Log in to your NextLead account
-2. Go to Settings > Automation > API Key
-3. Copy your API key
-4. In n8n, create new NextLead API credentials and paste your API key
-
-## Compatibility
-
-- Requires n8n version 0.210.0 or later
-- Tested with NextLead API v2
+- NextLead account with API access
 
 ## Resources
 
-* [n8n community nodes documentation](https://docs.n8n.io/integrations/community-nodes/)
-* [NextLead API documentation](https://dashboard.nextlead.app/en/api-documentation)
+- [NextLead API documentation](https://dashboard.nextlead.app/en/api-documentation)
+- [n8n community nodes](https://docs.n8n.io/integrations/community-nodes/)
