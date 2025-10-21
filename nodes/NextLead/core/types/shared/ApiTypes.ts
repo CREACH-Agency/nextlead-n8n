@@ -39,7 +39,9 @@ export type OperationType =
 	| 'getConversion'
 	| 'getCustomFields'
 	| 'getColumns'
-	| 'user';
+	| 'user'
+	| 'linkToStructure'
+	| 'linkToContact';
 
 export interface ResourceOperation {
 	name: string;

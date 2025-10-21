@@ -49,6 +49,12 @@ export const contactOperations: INodeProperties[] = [
 				action: 'Get team members',
 			},
 			{
+				name: 'Link to Structure',
+				value: 'linkToStructure',
+				description: 'Link a contact to a structure',
+				action: 'Link a contact to a structure',
+			},
+			{
 				name: 'Update',
 				value: 'update',
 				description: 'Update a contact',
@@ -346,9 +352,116 @@ const findFields = [
 	}),
 ];
 
+const linkToStructureFields = [
+	FieldDefinitionUtils.createCollectionField({
+		name: 'contactIdentifiers',
+		displayName: 'Contact Identifiers',
+		description:
+			'Choose at least one identifier to find the contact. Contact ID is the most reliable method.',
+		placeholder: 'Add Identifier',
+		operations: ['linkToStructure'],
+		fields: [
+			{
+				name: 'contactId',
+				displayName: 'Contact ID',
+				description: 'Contact ID (most reliable identifier)',
+			},
+			{
+				name: 'email',
+				displayName: 'Email',
+				description: 'Email address',
+			},
+			{
+				name: 'linkedin_url',
+				displayName: 'LinkedIn URL',
+				description: 'LinkedIn profile URL',
+			},
+			{
+				name: 'phone',
+				displayName: 'Phone',
+				description: 'Phone number',
+			},
+			{
+				name: 'mobile',
+				displayName: 'Mobile',
+				description: 'Mobile number',
+			},
+		],
+	}),
+	FieldDefinitionUtils.createCollectionField({
+		name: 'contactCustomField',
+		displayName: 'Contact Custom Field Identifier',
+		description: 'Use a custom field to identify the contact',
+		placeholder: 'Add Custom Field Identifier',
+		operations: ['linkToStructure'],
+		fields: [
+			{
+				name: 'customFieldTypeId',
+				displayName: 'Custom Field Type ID',
+				description: 'ID of the custom field type',
+			},
+			{
+				name: 'value',
+				displayName: 'Value',
+				description: 'Value of the custom field',
+			},
+		],
+	}),
+	FieldDefinitionUtils.createCollectionField({
+		name: 'structureIdentifiers',
+		displayName: 'Structure Identifiers',
+		description:
+			'Choose at least one identifier to find the structure. Structure ID or SIRET is most reliable.',
+		placeholder: 'Add Identifier',
+		operations: ['linkToStructure'],
+		fields: [
+			{
+				name: 'structureId',
+				displayName: 'Structure ID',
+				description: 'Structure ID (most reliable identifier)',
+			},
+			{
+				name: 'siret',
+				displayName: 'SIRET',
+				description: 'SIRET number (most reliable identifier)',
+			},
+			{
+				name: 'structure_name',
+				displayName: 'Structure Name',
+				description: 'Name of the structure',
+			},
+			{
+				name: 'structure_email',
+				displayName: 'Structure Email',
+				description: 'Email address of the structure',
+			},
+		],
+	}),
+	FieldDefinitionUtils.createCollectionField({
+		name: 'structureCustomField',
+		displayName: 'Structure Custom Field Identifier',
+		description: 'Use a custom field to identify the structure',
+		placeholder: 'Add Custom Field Identifier',
+		operations: ['linkToStructure'],
+		fields: [
+			{
+				name: 'customFieldTypeId',
+				displayName: 'Custom Field Type ID',
+				description: 'ID of the custom field type',
+			},
+			{
+				name: 'value',
+				displayName: 'Value',
+				description: 'Value of the custom field',
+			},
+		],
+	}),
+];
+
 export const contactFields: INodeProperties[] = [
 	...createFields,
 	...updateFields,
 	...deleteFields,
 	...findFields,
+	...linkToStructureFields,
 ];

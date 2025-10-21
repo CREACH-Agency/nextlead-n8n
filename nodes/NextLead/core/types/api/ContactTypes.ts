@@ -114,3 +114,43 @@ export interface ContactCustomField extends IDataObject {
 	required: boolean;
 	options?: string[];
 }
+
+export interface ContactStructureLinkRequest {
+	contactId?: string;
+	email?: string;
+	linkedin_url?: string;
+	phone?: string;
+	mobile?: string;
+	customField?: {
+		customFieldTypeId: string;
+		value: string;
+	};
+	structureId?: string;
+	siret?: string;
+	structure_name?: string;
+	structure_email?: string;
+	structureCustomField?: {
+		customFieldTypeId: string;
+		value: string;
+	};
+}
+
+export interface ContactStructureLinkResponse {
+	message: string;
+	contact: {
+		id: string;
+		firstName: string;
+		lastName: string;
+		email: string;
+		phone: string;
+		mobile: string;
+		structures?: Array<{ id: string; name: string }>;
+	};
+	structure: {
+		id: string;
+		name: string;
+		siret: string;
+		email: string;
+	};
+	alreadyLinked: boolean;
+}

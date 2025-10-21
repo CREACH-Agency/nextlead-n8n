@@ -36,6 +36,8 @@ export class ContactResource implements IResourceStrategy {
 				return this.handleDelete(context, itemIndex, apiService);
 			case 'find':
 				return this.handleFind(context, itemIndex, apiService);
+			case 'linkToStructure':
+				return this.handleLinkToStructure(context, itemIndex, apiService);
 			case 'getTeam':
 				return ResponseUtils.formatArrayResponse(await apiService.getTeam(context));
 			case 'getConversion':
@@ -144,6 +146,55 @@ export class ContactResource implements IResourceStrategy {
 			...(linkedinUrl && { linkedin_url: linkedinUrl }),
 		});
 
+		return ResponseUtils.formatSingleResponse(response);
+	}
+
+	private async handleLinkToStructure(
+		context: IExecuteFunctions,
+		itemIndex: number,
+		apiService: NextLeadApiService,
+	): Promise<INodeExecutionData[]> {
+		const contactIdentifiers = context.getNodeParameter(
+			'contactIdentifiers',
+			itemIndex,
+			{},
+		) as IDataObject;
+		const structureIdentifiers = context.getNodeParameter(
+			'structureIdentifiers',
+			itemIndex,
+			{},
+		) as IDataObject;
+		const contactCustomField = context.getNodeParameter(
+			'contactCustomField',
+			itemIndex,
+			{},
+		) as IDataObject;
+		const structureCustomField = context.getNodeParameter(
+			'structureCustomField',
+			itemIndex,
+			{},
+		) as IDataObject;
+
+		const linkData: IDataObject = {
+			...contactIdentifiers,
+			...structureIdentifiers,
+		};
+
+		if (contactCustomField.customFieldTypeId && contactCustomField.value) {
+			linkData.customField = {
+				customFieldTypeId: contactCustomField.customFieldTypeId,
+				value: contactCustomField.value,
+			};
+		}
+
+		if (structureCustomField.customFieldTypeId && structureCustomField.value) {
+			linkData.structureCustomField = {
+				customFieldTypeId: structureCustomField.customFieldTypeId,
+				value: structureCustomField.value,
+			};
+		}
+
+		const response = await apiService.linkContactToStructure(context, linkData);
 		return ResponseUtils.formatSingleResponse(response);
 	}
 }

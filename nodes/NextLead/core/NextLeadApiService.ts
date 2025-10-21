@@ -17,6 +17,10 @@ export class NextLeadApiService {
 		const { method, endpoint, data, queryParams } = config;
 
 		try {
+			const domain = this.credentials.domain.endsWith('/')
+				? this.credentials.domain.slice(0, -1)
+				: this.credentials.domain;
+
 			// Debug log
 			context.logger.info('NextLead API Request:', {
 				method,
@@ -27,7 +31,7 @@ export class NextLeadApiService {
 
 			const requestOptions: N8nRequestOptions = {
 				method,
-				url: `${this.credentials.domain}${endpoint}`,
+				url: `${domain}${endpoint}`,
 				json: true,
 			};
 
@@ -345,6 +349,28 @@ export class NextLeadApiService {
 		return this.makeRequest(context, {
 			method: 'GET',
 			endpoint: '/api/v2/polling/email/deleted-from-list',
+		});
+	}
+
+	async linkContactToStructure(
+		context: IExecuteFunctions,
+		linkData: IDataObject,
+	): Promise<NextLeadApiResponse> {
+		return this.makeRequest(context, {
+			method: 'POST',
+			endpoint: '/api/v2/receive/contact/link-to-structure',
+			data: linkData,
+		});
+	}
+
+	async linkStructureToContact(
+		context: IExecuteFunctions,
+		linkData: IDataObject,
+	): Promise<NextLeadApiResponse> {
+		return this.makeRequest(context, {
+			method: 'POST',
+			endpoint: '/api/v2/receive/structure/link-to-contact',
+			data: linkData,
 		});
 	}
 }

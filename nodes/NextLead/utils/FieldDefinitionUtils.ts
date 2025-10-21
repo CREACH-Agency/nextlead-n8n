@@ -24,6 +24,7 @@ export interface ICollectionFieldConfig {
 	description: string;
 	operations: string[];
 	fields: IFieldConfig[];
+	placeholder?: string;
 }
 
 export class FieldDefinitionUtils {
@@ -85,13 +86,14 @@ export class FieldDefinitionUtils {
 			displayName: config.displayName,
 			name: config.name,
 			type: 'collection',
-			placeholder: 'Add Field',
+			placeholder: config.placeholder ?? 'Add Field',
 			default: {},
 			displayOptions: {
 				show: {
 					operation: config.operations,
 				},
 			},
+			description: config.description,
 			options: config.fields.map((field) => ({
 				default: '',
 				displayName: field.displayName,

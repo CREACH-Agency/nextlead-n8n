@@ -36,6 +36,8 @@ export class StructureResource implements IResourceStrategy {
 				return this.handleDeleteStructure(context, itemIndex, apiService);
 			case 'getMany':
 				return this.handleGetManyStructures(context, apiService);
+			case 'linkToContact':
+				return this.handleLinkToContact(context, itemIndex, apiService);
 			default:
 				throw new Error(`Unknown operation: ${operation}`);
 		}
@@ -100,5 +102,54 @@ export class StructureResource implements IResourceStrategy {
 		const response = await apiService.getStructures(context);
 
 		return ResponseUtils.formatArrayResponse(response);
+	}
+
+	private async handleLinkToContact(
+		context: IExecuteFunctions,
+		itemIndex: number,
+		apiService: NextLeadApiService,
+	): Promise<INodeExecutionData[]> {
+		const structureIdentifiers = context.getNodeParameter(
+			'structureIdentifiers',
+			itemIndex,
+			{},
+		) as IDataObject;
+		const contactIdentifiers = context.getNodeParameter(
+			'contactIdentifiers',
+			itemIndex,
+			{},
+		) as IDataObject;
+		const structureCustomField = context.getNodeParameter(
+			'structureCustomField',
+			itemIndex,
+			{},
+		) as IDataObject;
+		const contactCustomField = context.getNodeParameter(
+			'contactCustomField',
+			itemIndex,
+			{},
+		) as IDataObject;
+
+		const linkData: IDataObject = {
+			...structureIdentifiers,
+			...contactIdentifiers,
+		};
+
+		if (structureCustomField.customFieldTypeId && structureCustomField.value) {
+			linkData.structureCustomField = {
+				customFieldTypeId: structureCustomField.customFieldTypeId,
+				value: structureCustomField.value,
+			};
+		}
+
+		if (contactCustomField.customFieldTypeId && contactCustomField.value) {
+			linkData.customField = {
+				customFieldTypeId: contactCustomField.customFieldTypeId,
+				value: contactCustomField.value,
+			};
+		}
+
+		const response = await apiService.linkStructureToContact(context, linkData);
+		return ResponseUtils.formatSingleResponse(response);
 	}
 }
