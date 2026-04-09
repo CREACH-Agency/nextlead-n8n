@@ -71,10 +71,12 @@ export class SaleResource implements IResourceStrategy {
 		apiService: NextLeadApiService,
 	): Promise<INodeExecutionData[]> {
 		const contactEmail = context.getNodeParameter('contactEmail', itemIndex) as string;
+		const searchName = context.getNodeParameter('search_name', itemIndex) as string;
 		const updateFields = context.getNodeParameter('updateFields', itemIndex, {}) as IDataObject;
 
 		const updateData: IDataObject = {
 			contact_email: contactEmail,
+			search_name: searchName,
 			...updateFields,
 		};
 
@@ -89,26 +91,17 @@ export class SaleResource implements IResourceStrategy {
 		apiService: NextLeadApiService,
 	): Promise<INodeExecutionData[]> {
 		const contactEmail = context.getNodeParameter('contactEmail', itemIndex) as string;
-		const deleteStrategy = context.getNodeParameter(
-			'deleteStrategy',
-			itemIndex,
-			'recent',
-		) as string;
+		const name = context.getNodeParameter('search_name', itemIndex) as string;
 
 		const deleteData: IDataObject = {
 			contact_email: contactEmail,
+			name,
 		};
-
-		if (deleteStrategy === 'byName') {
-			const name = context.getNodeParameter('name', itemIndex) as string;
-			deleteData.name = name;
-		}
 
 		await apiService.deleteSale(context, deleteData);
 
-		const strategy = deleteStrategy === 'recent' ? 'most recent sale' : 'specified sale';
 		return ResponseUtils.formatSuccessResponse(
-			`Sale deleted successfully (${strategy}) for contact: ${contactEmail}`,
+			`Sale "${name}" deleted successfully for contact: ${contactEmail}`,
 		);
 	}
 

@@ -125,6 +125,13 @@ const updateFields = [
 		required: true,
 		operations: ['update'],
 	}),
+	FieldDefinitionUtils.createStringField({
+		name: 'search_name',
+		displayName: 'Search Sale',
+		description: 'Exact name of the sale to update. Used to target the precise sale instead of the most recent one.',
+		required: true,
+		operations: ['update'],
+	}),
 	FieldDefinitionUtils.createCollectionField({
 		name: 'updateFields',
 		displayName: 'Update Fields',
@@ -181,47 +188,13 @@ const deleteFields = [
 		required: true,
 		operations: ['delete'],
 	}),
-	{
-		displayName: 'Delete Strategy',
-		name: 'deleteStrategy',
-		type: 'options' as const,
-		options: [
-			{
-				name: 'Delete Most Recent Sale',
-				value: 'recent',
-				description: 'Delete the most recent sale for this contact',
-			},
-			{
-				name: 'Delete Specific Sale by Name',
-				value: 'byName',
-				description: 'Delete a specific sale by providing its exact name',
-			},
-		],
-		default: 'recent',
-		displayOptions: {
-			show: {
-				resource: ['sale'],
-				operation: ['delete'],
-			},
-		},
-		description: 'Choose how to identify which sale to delete',
-	},
-	{
-		displayName: 'Sale Name',
-		name: 'name',
-		type: 'string' as const,
-		default: '',
-		displayOptions: {
-			show: {
-				resource: ['sale'],
-				operation: ['delete'],
-				deleteStrategy: ['byName'],
-			},
-		},
-		description: 'Exact name of the sale to delete',
-		placeholder: 'Enter the exact sale name',
+	FieldDefinitionUtils.createStringField({
+		name: 'search_name',
+		displayName: 'Search Sale',
+		description: 'Exact name of the sale to delete. Used to target the precise sale instead of the most recent one.',
 		required: true,
-	},
+		operations: ['delete'],
+	}),
 ];
 
 export const saleFields: INodeProperties[] = [...createFields, ...updateFields, ...deleteFields];

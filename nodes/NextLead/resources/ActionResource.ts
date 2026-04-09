@@ -73,10 +73,12 @@ export class ActionResource implements IResourceStrategy {
 		apiService: NextLeadApiService,
 	): Promise<INodeExecutionData[]> {
 		const contactEmail = context.getNodeParameter('contactEmail', itemIndex) as string;
+		const searchTitle = context.getNodeParameter('search_title', itemIndex) as string;
 		const updateFields = context.getNodeParameter('updateFields', itemIndex, {}) as IDataObject;
 
 		const updateData: IDataObject = {
 			contact_email: contactEmail,
+			search_title: searchTitle,
 			...updateFields,
 		};
 
@@ -91,11 +93,15 @@ export class ActionResource implements IResourceStrategy {
 		apiService: NextLeadApiService,
 	): Promise<INodeExecutionData[]> {
 		const contactEmail = context.getNodeParameter('contactEmail', itemIndex) as string;
+		const searchTitle = context.getNodeParameter('search_title', itemIndex) as string;
 
-		await apiService.deleteAction(context, contactEmail);
+		await apiService.deleteAction(context, {
+			contact_email: contactEmail,
+			search_title: searchTitle,
+		});
 
 		return ResponseUtils.formatSuccessResponse(
-			`Action deleted successfully for contact: ${contactEmail}`,
+			`Action "${searchTitle}" deleted successfully for contact: ${contactEmail}`,
 		);
 	}
 

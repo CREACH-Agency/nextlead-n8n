@@ -257,12 +257,12 @@ export class NextLeadApiService {
 
 	async deleteAction(
 		context: IExecuteFunctions,
-		contactEmail: string,
+		actionData: IDataObject,
 	): Promise<NextLeadApiResponse> {
 		return this.makeRequest(context, {
 			method: 'DELETE',
 			endpoint: '/api/v2/receive/actions/delete-action',
-			data: { contact_email: contactEmail },
+			data: actionData,
 		});
 	}
 

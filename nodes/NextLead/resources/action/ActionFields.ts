@@ -110,22 +110,13 @@ const updateFields = [
 		required: true,
 		operations: ['update'],
 	}),
-	{
-		displayName: 'Update Logic',
-		name: 'updateInfo',
-		type: 'notice' as const,
-		default: '',
-		displayOptions: {
-			show: {
-				resource: ['action'],
-				operation: ['update'],
-			},
-		},
-		typeOptions: {
-			theme: 'info' as const,
-		},
-		description: 'If you provide a title, NextLead will try to find an action with that exact title. If not found or no title provided, it will update the most recent action for this contact.',
-	},
+	FieldDefinitionUtils.createStringField({
+		name: 'search_title',
+		displayName: 'Search Action',
+		description: 'Exact title of the action to update. Used to target the precise action instead of the most recent one.',
+		required: true,
+		operations: ['update'],
+	}),
 	FieldDefinitionUtils.createCollectionField({
 		name: 'updateFields',
 		displayName: 'Update Fields',
@@ -178,26 +169,13 @@ const deleteFields = [
 		required: true,
 		operations: ['delete'],
 	}),
-	{
-		displayName: 'Delete Strategy',
-		name: 'deleteStrategy',
-		type: 'options' as const,
-		options: [
-			{
-				name: 'Delete Most Recent Action',
-				value: 'recent',
-				description: 'Delete the most recent action for this contact',
-			},
-		],
-		default: 'recent',
-		displayOptions: {
-			show: {
-				resource: ['action'],
-				operation: ['delete'],
-			},
-		},
-		description: 'NextLead API only supports deleting the most recent action per contact',
-	},
+	FieldDefinitionUtils.createStringField({
+		name: 'search_title',
+		displayName: 'Search Action',
+		description: 'Exact title of the action to delete. Used to target the precise action instead of the most recent one.',
+		required: true,
+		operations: ['delete'],
+	}),
 ];
 
 export const actionFields: INodeProperties[] = [
