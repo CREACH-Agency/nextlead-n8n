@@ -174,10 +174,16 @@ export class ContactResource implements IResourceStrategy {
 			itemIndex,
 			{},
 		) as IDataObject;
+		const setAsMainStructure = context.getNodeParameter(
+			'setAsMainStructure',
+			itemIndex,
+			true,
+		) as boolean;
 
 		const linkData: IDataObject = {
 			...contactIdentifiers,
 			...structureIdentifiers,
+			mainStructure: setAsMainStructure,
 		};
 
 		if (contactCustomField.customFieldTypeId && contactCustomField.value) {

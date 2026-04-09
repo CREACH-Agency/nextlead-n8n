@@ -300,6 +300,20 @@ const linkToContactFields = [
 			},
 		],
 	}),
+	{
+		displayName: 'Link As Secondary Structure',
+		name: 'linkAsSecondary',
+		type: 'boolean' as const,
+		default: false,
+		displayOptions: {
+			show: {
+				resource: ['structure'],
+				operation: ['linkToContact'],
+			},
+		},
+		description:
+			'Whether to link this structure as a secondary structure only. If disabled (default), the structure is set as the contact\'s main structure.',
+	},
 ];
 
 export const structureFields: INodeProperties[] = [

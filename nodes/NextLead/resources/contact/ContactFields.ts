@@ -456,6 +456,20 @@ const linkToStructureFields = [
 			},
 		],
 	}),
+	{
+		displayName: 'Set as Main Structure',
+		name: 'setAsMainStructure',
+		type: 'boolean' as const,
+		default: true,
+		displayOptions: {
+			show: {
+				resource: ['contact'],
+				operation: ['linkToStructure'],
+			},
+		},
+		description:
+			'Whether to set this structure as the contact\'s main structure. If disabled, the structure is only added as a secondary link.',
+	},
 ];
 
 export const contactFields: INodeProperties[] = [

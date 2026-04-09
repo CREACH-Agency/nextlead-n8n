@@ -129,10 +129,16 @@ export class StructureResource implements IResourceStrategy {
 			itemIndex,
 			{},
 		) as IDataObject;
+		const linkAsSecondary = context.getNodeParameter(
+			'linkAsSecondary',
+			itemIndex,
+			false,
+		) as boolean;
 
 		const linkData: IDataObject = {
 			...structureIdentifiers,
 			...contactIdentifiers,
+			linkAsSecondary,
 		};
 
 		if (structureCustomField.customFieldTypeId && structureCustomField.value) {
