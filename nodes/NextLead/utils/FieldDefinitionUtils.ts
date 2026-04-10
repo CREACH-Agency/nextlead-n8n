@@ -1,12 +1,41 @@
 import { INodeProperties } from 'n8n-workflow';
 
+interface IFieldOptionConfig {
+	name: string;
+	value: string;
+	description?: string;
+	action?: string;
+}
+
+interface IResourceLocatorModeConfig {
+	displayName: string;
+	name: string;
+	type: 'list' | 'string';
+	placeholder?: string;
+	typeOptions?: {
+		searchListMethod?: string;
+		searchable?: boolean;
+		searchFilterRequired?: boolean;
+	};
+}
+
 export interface IFieldConfig {
 	name: string;
 	displayName: string;
 	description: string;
+	type?: 'string' | 'number' | 'boolean' | 'options' | 'resourceLocator';
+	options?: IFieldOptionConfig[];
+	modes?: IResourceLocatorModeConfig[];
 	required?: boolean;
 	placeholder?: string;
-	default?: string | number | boolean;
+	default?:
+		| string
+		| number
+		| boolean
+		| {
+				mode: string;
+				value: string;
+		  };
 	typeOptions?: {
 		email?: boolean;
 		rows?: number;
@@ -15,6 +44,9 @@ export interface IFieldConfig {
 		maxValue?: number;
 		loadOptionsMethod?: string;
 		loadOptionsDependsOn?: string[];
+		searchListMethod?: string;
+		searchable?: boolean;
+		searchFilterRequired?: boolean;
 	};
 }
 
@@ -95,11 +127,20 @@ export class FieldDefinitionUtils {
 			},
 			description: config.description,
 			options: config.fields.map((field) => ({
-				default: '',
 				displayName: field.displayName,
+				default: field.default ?? '',
 				name: field.name,
-				type: 'string',
+				type: field.type ?? 'string',
 				description: field.description,
+				...(field.options && {
+					options: field.options.map((option) => ({
+						name: option.name,
+						value: option.value,
+						description: option.description,
+						...(option.action && { action: option.action }),
+					})),
+				}),
+				...(field.modes && { modes: field.modes }),
 				...(field.typeOptions && { typeOptions: field.typeOptions }),
 				...(field.placeholder && { placeholder: field.placeholder }),
 			})),
