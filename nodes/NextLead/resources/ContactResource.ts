@@ -90,8 +90,67 @@ export class ContactResource implements IResourceStrategy {
 		if (nextlead_config.length > 0) contactData.nextlead_config = nextlead_config;
 		if (custom_fields.length > 0) contactData.custom_fields = custom_fields;
 
+		const newStructureWrapper = context.getNodeParameter(
+			'newStructure',
+			itemIndex,
+			{},
+		) as IDataObject;
+		const newStructureInput = (newStructureWrapper.structure ?? {}) as IDataObject;
+		const newStructureName = ((newStructureInput.name as string) || '').trim();
+
 		context.logger.info('Creating contact with data:', contactData);
-		return ResponseUtils.formatSingleResponse(await apiService.createContact(context, contactData));
+		const contactResponse = await apiService.createContact(context, contactData);
+
+		if (!contactResponse.success || !newStructureName) {
+			return ResponseUtils.formatSingleResponse(contactResponse);
+		}
+
+		const { setAsMainStructure, ...structurePayload } = newStructureInput as {
+			setAsMainStructure?: boolean;
+		} & IDataObject;
+
+		const structureData = ContactHelpers.cleanFields({
+			...structurePayload,
+			name: newStructureName,
+		});
+
+		context.logger.info('Creating structure with data:', structureData);
+		const structureResponse = await apiService.createStructure(context, structureData);
+
+		if (!structureResponse.success) {
+			return ResponseUtils.formatSingleResponse({
+				success: true,
+				data: {
+					contact: contactResponse.data,
+					structure: null,
+					link: null,
+					structureError: structureResponse.error,
+				},
+			});
+		}
+
+		const shouldSetAsMain = setAsMainStructure !== false;
+		const linkData: IDataObject = {
+			email,
+			structure_name: newStructureName,
+			mainStructure: shouldSetAsMain,
+		};
+
+		const siret = (structureData.siret as string) || '';
+		if (siret) linkData.siret = siret;
+
+		context.logger.info('Linking structure to contact with data:', linkData);
+		const linkResponse = await apiService.linkStructureToContact(context, linkData);
+
+		return ResponseUtils.formatSingleResponse({
+			success: true,
+			data: {
+				contact: contactResponse.data,
+				structure: structureResponse.data,
+				link: linkResponse.success ? linkResponse.data : null,
+				...(linkResponse.success ? {} : { linkError: linkResponse.error }),
+			},
+		});
 	}
 
 	private async handleUpdate(
@@ -104,10 +163,22 @@ export class ContactResource implements IResourceStrategy {
 
 		if (!email && !linkedinFind) throw new Error('Either email or LinkedIn URL must be provided');
 
+		const rawUpdateFields = context.getNodeParameter('updateFields', itemIndex) as IDataObject;
+
+		// Extract linkStructure fixedCollection
+		const linkStructureWrapper = context.getNodeParameter('linkStructure', itemIndex, {}) as IDataObject;
+		const linkStructureInput = (linkStructureWrapper.structure ?? {}) as IDataObject;
+
+		if (linkStructureInput.structureId) {
+			const locator = linkStructureInput.structureId as IDataObject;
+			rawUpdateFields.structureId = (typeof locator === 'object' ? locator.value as string : locator as unknown as string) || '';
+			rawUpdateFields.setAsMainStructure = linkStructureInput.setAsMainStructure !== false;
+		}
+
 		const updateData: IDataObject = {
 			...(email && { mail: email }),
 			...(linkedinFind && { linkedin_find: linkedinFind }),
-			values_update: [context.getNodeParameter('updateFields', itemIndex) as IDataObject],
+			values_update: [rawUpdateFields],
 		};
 
 		return ResponseUtils.formatSingleResponse(await apiService.updateContact(context, updateData));
@@ -174,10 +245,16 @@ export class ContactResource implements IResourceStrategy {
 			itemIndex,
 			{},
 		) as IDataObject;
+		const setAsMainStructure = context.getNodeParameter(
+			'setAsMainStructure',
+			itemIndex,
+			true,
+		) as boolean;
 
 		const linkData: IDataObject = {
 			...contactIdentifiers,
 			...structureIdentifiers,
+			mainStructure: setAsMainStructure,
 		};
 
 		if (contactCustomField.customFieldTypeId && contactCustomField.value) {

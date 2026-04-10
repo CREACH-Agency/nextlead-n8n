@@ -70,12 +70,13 @@ export class StructureResource implements IResourceStrategy {
 		itemIndex: number,
 		apiService: NextLeadApiService,
 	): Promise<INodeExecutionData[]> {
-		const structureId = context.getNodeParameter('structureId', itemIndex) as string;
+		const structureLocator = context.getNodeParameter('structureId', itemIndex) as IDataObject;
+		const structureId = (structureLocator.value as string) || (structureLocator as unknown as string);
 		const updateFields = context.getNodeParameter('updateFields', itemIndex, {}) as IDataObject;
 
 		const updateData: IDataObject = {
 			id: structureId,
-			...updateFields,
+			values_update: [updateFields],
 		};
 
 		const response = await apiService.updateStructure(context, updateData);
@@ -129,10 +130,16 @@ export class StructureResource implements IResourceStrategy {
 			itemIndex,
 			{},
 		) as IDataObject;
+		const linkAsSecondary = context.getNodeParameter(
+			'linkAsSecondary',
+			itemIndex,
+			false,
+		) as boolean;
 
 		const linkData: IDataObject = {
 			...structureIdentifiers,
 			...contactIdentifiers,
+			linkAsSecondary,
 		};
 
 		if (structureCustomField.customFieldTypeId && structureCustomField.value) {

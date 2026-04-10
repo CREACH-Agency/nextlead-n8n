@@ -109,17 +109,56 @@ const createFields = [
 				description: 'Comment about the structure',
 				default: '',
 			},
+			{
+				displayName: 'Group Name or ID',
+				name: 'groupId',
+				type: 'options',
+				default: '',
+				description:
+					'Group to assign the structure to. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				typeOptions: {
+					loadOptionsMethod: 'getGroups',
+				},
+			},
 		],
 	}),
 ];
 
 const updateFields = [
-	FieldDefinitionUtils.createIdField({
+	{
+		displayName: 'Structure Name or ID',
 		name: 'structureId',
-		displayName: 'Structure ID',
-		description: 'ID of the structure to update',
-		operations: ['update'],
-	}),
+		type: 'resourceLocator' as const,
+		required: true,
+		displayOptions: {
+			show: {
+				resource: ['structure'],
+				operation: ['update'],
+			},
+		},
+		default: { mode: 'list', value: '' },
+		modes: [
+			{
+				displayName: 'From List',
+				name: 'list',
+				type: 'list' as const,
+				placeholder: 'Select a structure...',
+				typeOptions: {
+					searchListMethod: 'searchStructures',
+					searchable: true,
+					searchFilterRequired: false,
+				},
+			},
+			{
+				displayName: 'By ID',
+				name: 'id',
+				type: 'string' as const,
+				placeholder: 'structure-id',
+			},
+		],
+		description:
+			'Choose from the structure list using search, or specify an ID directly',
+	},
 	FieldDefinitionUtils.createCollectionField({
 		name: 'updateFields',
 		displayName: 'Update Fields',
@@ -180,6 +219,17 @@ const updateFields = [
 				name: 'comment',
 				description: 'Comment about the structure',
 				default: '',
+			},
+			{
+				displayName: 'Group Name or ID',
+				name: 'add_to_group',
+				type: 'options',
+				default: '',
+				description:
+					'Group to assign the structure to. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				typeOptions: {
+					loadOptionsMethod: 'getGroups',
+				},
 			},
 		],
 	}),
@@ -300,6 +350,20 @@ const linkToContactFields = [
 			},
 		],
 	}),
+	{
+		displayName: 'Link As Secondary Structure',
+		name: 'linkAsSecondary',
+		type: 'boolean' as const,
+		default: false,
+		displayOptions: {
+			show: {
+				resource: ['structure'],
+				operation: ['linkToContact'],
+			},
+		},
+		description:
+			"Whether to link this structure as a secondary structure only. If disabled (default), the structure is set as the contact's main structure.",
+	},
 ];
 
 export const structureFields: INodeProperties[] = [

@@ -280,6 +280,35 @@ export class NextLeadApiService {
 		});
 	}
 
+	async createList(
+		context: IExecuteFunctions,
+		listData: IDataObject,
+	): Promise<NextLeadApiResponse> {
+		return this.makeRequest(context, {
+			method: 'POST',
+			endpoint: '/api/v2/receive/lists/create-list',
+			data: listData,
+		});
+	}
+
+	async createGroup(
+		context: IExecuteFunctions,
+		groupData: IDataObject,
+	): Promise<NextLeadApiResponse> {
+		return this.makeRequest(context, {
+			method: 'POST',
+			endpoint: '/api/v2/receive/groups/create-group',
+			data: groupData,
+		});
+	}
+
+	async getGroups(context: IExecuteFunctions): Promise<NextLeadApiResponse> {
+		return this.makeRequest(context, {
+			method: 'GET',
+			endpoint: '/api/v2/receive/groups/get-groups',
+		});
+	}
+
 	async pollContactsCreated(
 		context: IExecuteFunctions | IPollFunctions,
 	): Promise<NextLeadApiResponse> {

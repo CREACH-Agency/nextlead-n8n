@@ -1,25 +1,27 @@
 import {
 	IExecuteFunctions,
+	ILoadOptionsFunctions,
+	INodeExecutionData,
+	INodeListSearchResult,
+	INodeProperties,
+	INodePropertyOptions,
 	INodeType,
 	INodeTypeDescription,
-	INodeExecutionData,
-	INodeProperties,
 	NodeConnectionType,
-	ILoadOptionsFunctions,
-	INodePropertyOptions,
 } from 'n8n-workflow';
 
-import { ResourceManager } from './core/ResourceManager';
-import { ContactResource } from './resources/ContactResource';
-import { StructureResource } from './resources/StructureResource';
-import { SaleResource } from './resources/SaleResource';
-import { ActionResource } from './resources/ActionResource';
-import { ListResource } from './resources/ListResource';
-import { IdentifyResource } from './resources/IdentifyResource';
 import { NextLeadErrorHandler } from './core/NextLeadErrorHandler';
-import { ResourceType, OperationType } from './core/types/NextLeadTypes';
-import { ConversionStatus } from './core/types/shared/ApiTypes';
+import { ResourceManager } from './core/ResourceManager';
+import { OperationType, ResourceType } from './core/types/NextLeadTypes';
 import { NextLeadCredentials } from './core/types/n8n/RequestTypes';
+import { ConversionStatus } from './core/types/shared/ApiTypes';
+import { ActionResource } from './resources/ActionResource';
+import { ContactResource } from './resources/ContactResource';
+import { GroupResource } from './resources/GroupResource';
+import { IdentifyResource } from './resources/IdentifyResource';
+import { ListResource } from './resources/ListResource';
+import { SaleResource } from './resources/SaleResource';
+import { StructureResource } from './resources/StructureResource';
 
 export class NextLead implements INodeType {
 	description: INodeTypeDescription = {
@@ -69,6 +71,10 @@ export class NextLead implements INodeType {
 						value: 'contact',
 					},
 					{
+						name: 'Group',
+						value: 'group',
+					},
+					{
 						name: 'Identify',
 						value: 'identify',
 					},
@@ -108,6 +114,7 @@ export class NextLead implements INodeType {
 		manager.register(new SaleResource());
 		manager.register(new ActionResource());
 		manager.register(new ListResource());
+		manager.register(new GroupResource());
 		manager.register(new IdentifyResource());
 		return manager;
 	}
@@ -244,12 +251,20 @@ export class NextLead implements INodeType {
 					};
 
 					const response = await this.helpers.request(requestOptions);
+					const structures = Array.isArray(response)
+						? response
+						: Array.isArray((response as { data?: unknown[] }).data)
+							? ((response as { data: unknown[] }).data as unknown[])
+							: [];
 
-					if (Array.isArray(response)) {
-						return response.map((structure: { id: string; name: string }) => ({
-							name: structure.name,
-							value: structure.id,
-						}));
+					if (structures.length > 0) {
+						return structures.map((structure) => {
+							const typedStructure = structure as { id?: string; name?: string };
+							return {
+								name: typedStructure.name ?? typedStructure.id ?? 'Unnamed structure',
+								value: typedStructure.id ?? '',
+							};
+						});
 					}
 
 					return [];
@@ -283,6 +298,32 @@ export class NextLead implements INodeType {
 					return [];
 				}
 			},
+			async getGroups(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				try {
+					const credentials = (await this.getCredentials('nextLeadApi')) as NextLeadCredentials;
+					const requestOptions = {
+						method: 'GET' as const,
+						url: `${credentials.domain}/api/v2/receive/groups/get-groups`,
+						headers: {
+							Authorization: `Bearer ${credentials.apiKey}`,
+						},
+						json: true,
+					};
+
+					const response = await this.helpers.request(requestOptions);
+
+					if (Array.isArray(response)) {
+						return response.map((group: { id: string; name: string }) => ({
+							name: group.name,
+							value: group.id,
+						}));
+					}
+
+					return [];
+				} catch (error) {
+					return [];
+				}
+			},
 			async getCustomFieldTypes(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				try {
 					const credentials = (await this.getCredentials('nextLeadApi')) as NextLeadCredentials;
@@ -307,6 +348,55 @@ export class NextLead implements INodeType {
 					return [];
 				} catch (error) {
 					return [];
+				}
+			},
+		},
+		listSearch: {
+			async searchStructures(
+				this: ILoadOptionsFunctions,
+				filter?: string,
+			): Promise<INodeListSearchResult> {
+				try {
+					const searchTerm = (filter ?? '').trim();
+
+					const credentials = (await this.getCredentials('nextLeadApi')) as NextLeadCredentials;
+					const requestOptions = {
+						method: 'GET' as const,
+						url: `${credentials.domain}/api/v2/receive/structure/get-structures`,
+						headers: {
+							Authorization: `Bearer ${credentials.apiKey}`,
+						},
+						qs: {
+							...(searchTerm && { search: searchTerm }),
+							limit: 5,
+						},
+						json: true,
+					};
+
+					const response = await this.helpers.request(requestOptions);
+					const structures = Array.isArray(response)
+						? response
+						: Array.isArray((response as { data?: unknown[] }).data)
+							? ((response as { data: unknown[] }).data as unknown[])
+							: [];
+
+					return {
+						results: structures
+							.map((structure) => {
+								const typedStructure = structure as { id?: string; name?: string; siret?: string };
+								const id = typedStructure.id ?? '';
+								if (!id) return null;
+								const mainLabel = typedStructure.name || 'Unnamed structure';
+								const secondaryLabel = typedStructure.siret ? ` (${typedStructure.siret})` : '';
+								return {
+									name: `${mainLabel}${secondaryLabel}`,
+									value: id,
+								};
+							})
+							.filter((item): item is { name: string; value: string } => item !== null),
+					};
+				} catch (error) {
+					return { results: [] };
 				}
 			},
 		},

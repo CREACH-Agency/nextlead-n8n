@@ -147,9 +147,31 @@ const createFields = [
 				description: 'ID of the conversion status (from Get Conversion operation)',
 			},
 			{
+				displayName: 'Structure Name or ID',
 				name: 'establishmentId',
-				displayName: 'Establishment ID',
-				description: 'ID of the establishment',
+				type: 'resourceLocator',
+				default: { mode: 'list', value: '' },
+				modes: [
+					{
+						displayName: 'From List',
+						name: 'list',
+						type: 'list',
+						placeholder: 'Select a structure...',
+						typeOptions: {
+							searchListMethod: 'searchStructures',
+							searchable: true,
+							searchFilterRequired: false,
+						},
+					},
+					{
+						displayName: 'By ID',
+						name: 'id',
+						type: 'string',
+						placeholder: 'structure-id',
+					},
+				],
+				description:
+					'Choose from the structure list using search, or specify an ID directly',
 			},
 			{
 				name: 'listId',
@@ -284,6 +306,96 @@ const createFields = [
 			},
 		],
 	},
+	{
+		displayName: 'Create & Link Structure',
+		name: 'newStructure',
+		type: 'fixedCollection' as const,
+		default: {},
+		displayOptions: { show: { resource: ['contact'], operation: ['create'] } },
+		description:
+			'Optionally create a new structure together with this contact and link them. The structure is created first, then linked to the newly created contact.',
+		typeOptions: { multipleValues: false },
+		options: [
+			{
+				name: 'structure',
+				displayName: 'Structure',
+				values: [
+					{
+						displayName: 'Address',
+						name: 'address1',
+						type: 'string' as const,
+						default: '',
+						description: 'Street address of the structure',
+					},
+					{
+						displayName: 'City',
+						name: 'city',
+						type: 'string' as const,
+						default: '',
+						description: 'City of the structure',
+					},
+					{
+						displayName: 'Comment',
+						name: 'comment',
+						type: 'string' as const,
+						default: '',
+						description: 'Comment about the structure',
+					},
+					{
+						displayName: 'Email',
+						name: 'email',
+						type: 'string' as const,
+						default: '',
+						description: 'Email address of the structure',
+					},
+					{
+						displayName: 'Name',
+						name: 'name',
+						type: 'string' as const,
+						default: '',
+						description: 'Name of the structure to create (required to enable structure creation)',
+					},
+					{
+						displayName: 'Phone',
+						name: 'phone',
+						type: 'string' as const,
+						default: '',
+						description: 'Phone number of the structure',
+					},
+					{
+						displayName: 'Set as Main Structure',
+						name: 'setAsMainStructure',
+						type: 'boolean' as const,
+						default: true,
+						description:
+							'Whether to set the newly created structure as the contact\'s main structure. If disabled, it will be linked as a secondary structure.',
+					},
+					{
+						displayName: 'SIRET',
+						name: 'siret',
+						type: 'string' as const,
+						default: '',
+						description: 'SIRET number of the structure',
+					},
+					{
+						displayName: 'Website',
+						name: 'website',
+						type: 'string' as const,
+						default: '',
+						description: 'Website URL of the structure',
+						placeholder: 'https://www.example.com',
+					},
+					{
+						displayName: 'Zip Code',
+						name: 'zipCode',
+						type: 'string' as const,
+						default: '',
+						description: 'Postal code of the structure',
+					},
+				],
+			},
+		],
+	},
 ];
 
 const updateFields = [
@@ -314,6 +426,59 @@ const updateFields = [
 			...FieldDefinitionUtils.getCommonContactFields(),
 		],
 	}),
+	{
+		displayName: 'Link Structure',
+		name: 'linkStructure',
+		type: 'fixedCollection' as const,
+		default: {},
+		displayOptions: { show: { resource: ['contact'], operation: ['update'] } },
+		description: 'Optionally link an existing structure to this contact',
+		typeOptions: { multipleValues: false },
+		options: [
+			{
+				name: 'structure',
+				displayName: 'Structure',
+				values: [
+					{
+						displayName: 'Structure Name or ID',
+						name: 'structureId',
+						type: 'resourceLocator' as const,
+						required: true,
+						default: { mode: 'list', value: '' },
+						modes: [
+							{
+								displayName: 'From List',
+								name: 'list',
+								type: 'list' as const,
+								placeholder: 'Select a structure...',
+								typeOptions: {
+									searchListMethod: 'searchStructures',
+									searchable: true,
+									searchFilterRequired: false,
+								},
+							},
+							{
+								displayName: 'By ID',
+								name: 'id',
+								type: 'string' as const,
+								placeholder: 'structure-id',
+							},
+						],
+						description:
+							'Choose from the structure list using search, or specify an ID directly',
+					},
+					{
+						displayName: 'Set as Main Structure',
+						name: 'setAsMainStructure',
+						type: 'boolean' as const,
+						default: true,
+						description:
+							'Whether to set this structure as the contact\'s main structure. If disabled, the structure is only added as a secondary link.',
+					},
+				],
+			},
+		],
+	},
 ];
 
 const deleteFields = [
@@ -456,6 +621,20 @@ const linkToStructureFields = [
 			},
 		],
 	}),
+	{
+		displayName: 'Set as Main Structure',
+		name: 'setAsMainStructure',
+		type: 'boolean' as const,
+		default: true,
+		displayOptions: {
+			show: {
+				resource: ['contact'],
+				operation: ['linkToStructure'],
+			},
+		},
+		description:
+			'Whether to set this structure as the contact\'s main structure. If disabled, the structure is only added as a secondary link.',
+	},
 ];
 
 export const contactFields: INodeProperties[] = [
