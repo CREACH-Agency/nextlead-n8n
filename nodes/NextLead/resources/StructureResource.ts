@@ -70,12 +70,13 @@ export class StructureResource implements IResourceStrategy {
 		itemIndex: number,
 		apiService: NextLeadApiService,
 	): Promise<INodeExecutionData[]> {
-		const structureId = context.getNodeParameter('structureId', itemIndex) as string;
+		const structureLocator = context.getNodeParameter('structureId', itemIndex) as IDataObject;
+		const structureId = (structureLocator.value as string) || (structureLocator as unknown as string);
 		const updateFields = context.getNodeParameter('updateFields', itemIndex, {}) as IDataObject;
 
 		const updateData: IDataObject = {
 			id: structureId,
-			...updateFields,
+			values_update: [updateFields],
 		};
 
 		const response = await apiService.updateStructure(context, updateData);

@@ -17,6 +17,7 @@ import { NextLeadCredentials } from './core/types/n8n/RequestTypes';
 import { ConversionStatus } from './core/types/shared/ApiTypes';
 import { ActionResource } from './resources/ActionResource';
 import { ContactResource } from './resources/ContactResource';
+import { GroupResource } from './resources/GroupResource';
 import { IdentifyResource } from './resources/IdentifyResource';
 import { ListResource } from './resources/ListResource';
 import { SaleResource } from './resources/SaleResource';
@@ -70,6 +71,10 @@ export class NextLead implements INodeType {
 						value: 'contact',
 					},
 					{
+						name: 'Group',
+						value: 'group',
+					},
+					{
 						name: 'Identify',
 						value: 'identify',
 					},
@@ -109,6 +114,7 @@ export class NextLead implements INodeType {
 		manager.register(new SaleResource());
 		manager.register(new ActionResource());
 		manager.register(new ListResource());
+		manager.register(new GroupResource());
 		manager.register(new IdentifyResource());
 		return manager;
 	}
@@ -284,6 +290,32 @@ export class NextLead implements INodeType {
 						return response.map((list: { id: string; name: string }) => ({
 							name: list.name,
 							value: list.id,
+						}));
+					}
+
+					return [];
+				} catch (error) {
+					return [];
+				}
+			},
+			async getGroups(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				try {
+					const credentials = (await this.getCredentials('nextLeadApi')) as NextLeadCredentials;
+					const requestOptions = {
+						method: 'GET' as const,
+						url: `${credentials.domain}/api/v2/receive/groups/get-groups`,
+						headers: {
+							Authorization: `Bearer ${credentials.apiKey}`,
+						},
+						json: true,
+					};
+
+					const response = await this.helpers.request(requestOptions);
+
+					if (Array.isArray(response)) {
+						return response.map((group: { id: string; name: string }) => ({
+							name: group.name,
+							value: group.id,
 						}));
 					}
 

@@ -4,19 +4,19 @@ import { ResourceType, OperationType, NextLeadCredentials } from '../core/types/
 import { IResourceStrategy } from '../core/interfaces/IResourceStrategy';
 import { NextLeadApiService } from '../core/NextLeadApiService';
 import { ResponseUtils } from '../utils/ResponseUtils';
-import { listOperations, listFields } from './list/ListFields';
+import { groupOperations, groupFields } from './group/GroupFields';
 
-export class ListResource implements IResourceStrategy {
+export class GroupResource implements IResourceStrategy {
 	getResourceType(): ResourceType {
-		return 'list';
+		return 'group';
 	}
 
 	getOperations(): INodeProperties[] {
-		return listOperations;
+		return groupOperations;
 	}
 
 	getFields(): INodeProperties[] {
-		return listFields;
+		return groupFields;
 	}
 
 	async execute(
@@ -29,38 +29,33 @@ export class ListResource implements IResourceStrategy {
 
 		switch (operation) {
 			case 'create':
-				return this.handleCreateList(context, itemIndex, apiService);
-			case 'getMany':
-				return this.handleGetManyLists(context, apiService);
+				return this.handleCreateGroup(context, itemIndex, apiService);
 			default:
 				throw new Error(`Unknown operation: ${operation}`);
 		}
 	}
 
-	private async handleCreateList(
+	private async handleCreateGroup(
 		context: IExecuteFunctions,
 		itemIndex: number,
 		apiService: NextLeadApiService,
 	): Promise<INodeExecutionData[]> {
 		const name = context.getNodeParameter('name', itemIndex) as string;
 		const type = context.getNodeParameter('type', itemIndex, 'REGULAR') as string;
+		const additionalFields = context.getNodeParameter(
+			'additionalFields',
+			itemIndex,
+			{},
+		) as IDataObject;
 
-		const listData: IDataObject = {
+		const groupData: IDataObject = {
 			name,
 			type,
+			...additionalFields,
 		};
 
-		const response = await apiService.createList(context, listData);
+		const response = await apiService.createGroup(context, groupData);
 
 		return ResponseUtils.formatSingleResponse(response);
-	}
-
-	private async handleGetManyLists(
-		context: IExecuteFunctions,
-		apiService: NextLeadApiService,
-	): Promise<INodeExecutionData[]> {
-		const response = await apiService.getLists(context);
-
-		return ResponseUtils.formatArrayResponse(response);
 	}
 }

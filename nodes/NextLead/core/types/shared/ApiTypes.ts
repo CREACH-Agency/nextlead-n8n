@@ -26,7 +26,7 @@ export interface ConversionStatus {
 	organizationId?: string;
 }
 
-export type ResourceType = 'contact' | 'structure' | 'sale' | 'action' | 'list' | 'identify';
+export type ResourceType = 'contact' | 'structure' | 'sale' | 'action' | 'list' | 'group' | 'identify';
 
 export type OperationType =
 	| 'create'
