@@ -163,10 +163,22 @@ export class ContactResource implements IResourceStrategy {
 
 		if (!email && !linkedinFind) throw new Error('Either email or LinkedIn URL must be provided');
 
+		const rawUpdateFields = context.getNodeParameter('updateFields', itemIndex) as IDataObject;
+
+		// Extract linkStructure fixedCollection
+		const linkStructureWrapper = context.getNodeParameter('linkStructure', itemIndex, {}) as IDataObject;
+		const linkStructureInput = (linkStructureWrapper.structure ?? {}) as IDataObject;
+
+		if (linkStructureInput.structureId) {
+			const locator = linkStructureInput.structureId as IDataObject;
+			rawUpdateFields.structureId = (typeof locator === 'object' ? locator.value as string : locator as unknown as string) || '';
+			rawUpdateFields.setAsMainStructure = linkStructureInput.setAsMainStructure !== false;
+		}
+
 		const updateData: IDataObject = {
 			...(email && { mail: email }),
 			...(linkedinFind && { linkedin_find: linkedinFind }),
-			values_update: [context.getNodeParameter('updateFields', itemIndex) as IDataObject],
+			values_update: [rawUpdateFields],
 		};
 
 		return ResponseUtils.formatSingleResponse(await apiService.updateContact(context, updateData));

@@ -426,6 +426,59 @@ const updateFields = [
 			...FieldDefinitionUtils.getCommonContactFields(),
 		],
 	}),
+	{
+		displayName: 'Link Structure',
+		name: 'linkStructure',
+		type: 'fixedCollection' as const,
+		default: {},
+		displayOptions: { show: { resource: ['contact'], operation: ['update'] } },
+		description: 'Optionally link an existing structure to this contact',
+		typeOptions: { multipleValues: false },
+		options: [
+			{
+				name: 'structure',
+				displayName: 'Structure',
+				values: [
+					{
+						displayName: 'Structure Name or ID',
+						name: 'structureId',
+						type: 'resourceLocator' as const,
+						required: true,
+						default: { mode: 'list', value: '' },
+						modes: [
+							{
+								displayName: 'From List',
+								name: 'list',
+								type: 'list' as const,
+								placeholder: 'Select a structure...',
+								typeOptions: {
+									searchListMethod: 'searchStructures',
+									searchable: true,
+									searchFilterRequired: false,
+								},
+							},
+							{
+								displayName: 'By ID',
+								name: 'id',
+								type: 'string' as const,
+								placeholder: 'structure-id',
+							},
+						],
+						description:
+							'Choose from the structure list using search, or specify an ID directly',
+					},
+					{
+						displayName: 'Set as Main Structure',
+						name: 'setAsMainStructure',
+						type: 'boolean' as const,
+						default: true,
+						description:
+							'Whether to set this structure as the contact\'s main structure. If disabled, the structure is only added as a secondary link.',
+					},
+				],
+			},
+		],
+	},
 ];
 
 const deleteFields = [
