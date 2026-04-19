@@ -86,9 +86,20 @@ export class ContactResource implements IResourceStrategy {
 			context.getNodeParameter('custom_fields', itemIndex, {}) as IDataObject,
 		);
 
+		const noteWrapper = context.getNodeParameter('note', itemIndex, {}) as IDataObject;
+		const noteInput = (noteWrapper.noteData ?? {}) as IDataObject;
+
 		if (socials.length > 0) contactData.socials = socials;
 		if (nextlead_config.length > 0) contactData.nextlead_config = nextlead_config;
 		if (custom_fields.length > 0) contactData.custom_fields = custom_fields;
+		if (noteInput.note_content) {
+			contactData.note = noteInput.note_title
+				? { content: noteInput.note_content, title: noteInput.note_title }
+				: noteInput.note_content;
+			if (noteInput.note_author_user_id) {
+				contactData.note_author_user_id = noteInput.note_author_user_id;
+			}
+		}
 
 		const newStructureWrapper = context.getNodeParameter(
 			'newStructure',
@@ -175,10 +186,21 @@ export class ContactResource implements IResourceStrategy {
 			rawUpdateFields.setAsMainStructure = linkStructureInput.setAsMainStructure !== false;
 		}
 
+		const noteUpdateWrapper = context.getNodeParameter('noteUpdate', itemIndex, {}) as IDataObject;
+		const noteUpdateInput = (noteUpdateWrapper.noteData ?? {}) as IDataObject;
+
 		const updateData: IDataObject = {
 			...(email && { mail: email }),
 			...(linkedinFind && { linkedin_find: linkedinFind }),
 			values_update: [rawUpdateFields],
+			...(noteUpdateInput.note_content && {
+				note: noteUpdateInput.note_title
+					? { content: noteUpdateInput.note_content, title: noteUpdateInput.note_title }
+					: noteUpdateInput.note_content,
+				...(noteUpdateInput.note_author_user_id && {
+					note_author_user_id: noteUpdateInput.note_author_user_id,
+				}),
+			}),
 		};
 
 		return ResponseUtils.formatSingleResponse(await apiService.updateContact(context, updateData));
