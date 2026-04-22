@@ -1,2 +1,17 @@
 .DS_Store
 *.tsbuildinfo
+*.tgz
+nodes/
+credentials/
+.github/
+.vscode/
+.eslintrc.js
+.eslintrc.prepublish.js
+.prettierrc.js
+.editorconfig
+tsconfig.json
+gulpfile.js
+CHECKLIST_PUBLICATION.md
+PUBLICATION_GUIDE.md
+PUBLICATION_CLIENT.md
+pnpm-lock.yaml
