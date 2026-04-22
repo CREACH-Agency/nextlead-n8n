@@ -22,7 +22,7 @@ export class IdentifyResource implements IResourceStrategy {
 	async execute(
 		operation: OperationType,
 		context: IExecuteFunctions,
-		_itemIndex: number,
+		itemIndex: number,
 	): Promise<INodeExecutionData[]> {
 		const credentials = (await context.getCredentials('nextLeadApi')) as NextLeadCredentials;
 		const apiService = new NextLeadApiService(credentials);
@@ -31,7 +31,7 @@ export class IdentifyResource implements IResourceStrategy {
 			case 'user':
 				return this.handleIdentifyUser(context, apiService);
 			default:
-				throw new Error(`Unknown operation: ${operation}`);
+				throw new Error(`Unknown identify operation: ${operation} (item ${itemIndex})`);
 		}
 	}
 

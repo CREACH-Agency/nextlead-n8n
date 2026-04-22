@@ -1,7 +1,9 @@
 import { IExecuteFunctions, IDataObject, NodeOperationError } from 'n8n-workflow';
 
+import { NextLeadApiResponse } from '../core/types/shared/ApiTypes';
+
 export interface IApiService {
-	[key: string]: (context: IExecuteFunctions, ...args: any[]) => Promise<any>;
+	[key: string]: unknown;
 }
 
 export interface IOperationConfig {
@@ -36,10 +38,9 @@ export class OperationHandlerUtils {
 		itemIndex: number,
 		apiService: IApiService,
 		config: ICreateOperationConfig,
-	): Promise<any> {
+	): Promise<unknown> {
 		const data: IDataObject = {};
 
-		// Extract required parameters
 		for (const param of config.requiredParams) {
 			const value = context.getNodeParameter(param, itemIndex) as string;
 			if (!value) {
@@ -48,7 +49,6 @@ export class OperationHandlerUtils {
 			data[param] = value;
 		}
 
-		// Extract additional fields if specified
 		if (config.additionalFieldsParam) {
 			const additionalFields = context.getNodeParameter(
 				config.additionalFieldsParam,
@@ -57,7 +57,6 @@ export class OperationHandlerUtils {
 			Object.assign(data, additionalFields);
 		}
 
-		// Extract optional parameters
 		if (config.optionalParams) {
 			for (const param of config.optionalParams) {
 				const value = context.getNodeParameter(param, itemIndex, undefined);
@@ -78,7 +77,7 @@ export class OperationHandlerUtils {
 		itemIndex: number,
 		apiService: IApiService,
 		config: IUpdateOperationConfig,
-	): Promise<any> {
+	): Promise<unknown> {
 		const id = context.getNodeParameter(config.idParam, itemIndex) as string;
 		const updateFields = context.getNodeParameter(
 			config.updateFieldsParam,
@@ -108,7 +107,7 @@ export class OperationHandlerUtils {
 		itemIndex: number,
 		apiService: IApiService,
 		config: IDeleteOperationConfig,
-	): Promise<any> {
+	): Promise<unknown> {
 		const id = context.getNodeParameter(config.idParam, itemIndex) as string;
 
 		if (!id) {
@@ -129,7 +128,7 @@ export class OperationHandlerUtils {
 		itemIndex: number,
 		apiService: IApiService,
 		config: IFindOperationConfig,
-	): Promise<any> {
+	): Promise<unknown> {
 		const searchBy = context.getNodeParameter(config.searchByParam, itemIndex) as string;
 		const searchValue = context.getNodeParameter(config.searchValueParam, itemIndex) as string;
 
@@ -154,7 +153,7 @@ export class OperationHandlerUtils {
 		context: IExecuteFunctions,
 		apiService: IApiService,
 		config: IOperationConfig,
-	): Promise<any> {
+	): Promise<unknown> {
 		return this.executeApiCall(context, apiService, config.apiMethodName, config.operationName, [
 			context,
 		]);
@@ -165,8 +164,8 @@ export class OperationHandlerUtils {
 		apiService: IApiService,
 		methodName: string,
 		operationName: string,
-		args: [IExecuteFunctions, ...any[]],
-	): Promise<any> {
+		args: [IExecuteFunctions, ...unknown[]],
+	): Promise<unknown> {
 		const method = apiService[methodName];
 
 		if (!method || typeof method !== 'function') {
@@ -174,30 +173,32 @@ export class OperationHandlerUtils {
 		}
 
 		try {
-			const response = await method.apply(apiService, args);
+			const fn = method as (...a: unknown[]) => Promise<NextLeadApiResponse>;
+			const response = await fn.call(apiService, ...args);
 
 			if (!response || !response.success) {
 				throw new NodeOperationError(
 					context.getNode(),
-					response?.error || `${operationName} failed`,
+					response?.error ?? `${operationName} failed`,
 				);
 			}
 
 			return response.data;
-		} catch (error: any) {
+		} catch (error: unknown) {
 			if (error instanceof NodeOperationError) {
 				throw error;
 			}
-			throw new NodeOperationError(context.getNode(), `${operationName} failed: ${error.message}`);
+			const message = error instanceof Error ? error.message : String(error);
+			throw new NodeOperationError(context.getNode(), `${operationName} failed: ${message}`);
 		}
 	}
 
-	static buildDataObject(params: { [key: string]: any }): IDataObject {
+	static buildDataObject(params: Record<string, unknown>): IDataObject {
 		const data: IDataObject = {};
 
 		for (const [key, value] of Object.entries(params)) {
 			if (value !== undefined && value !== null && value !== '') {
-				data[key] = value;
+				data[key] = value as IDataObject[string];
 			}
 		}
 

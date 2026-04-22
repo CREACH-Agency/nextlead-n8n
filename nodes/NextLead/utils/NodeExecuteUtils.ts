@@ -27,7 +27,6 @@ export class NodeExecuteUtils {
 	static async executeStandardFlow(
 		context: IExecuteFunctions,
 		nodeInstance: INodeExecuteContext,
-		_options?: IExecuteOptions,
 	): Promise<INodeExecutionData[][]> {
 		const items = context.getInputData();
 		const returnData: IDataObject[] = [];

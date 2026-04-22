@@ -5,6 +5,8 @@ tmp
 dist
 npm-debug.log*
 yarn.lock
+*.tgz
+*.tsbuildinfo
 .vscode/launch.json
 .claude/
 .claudedocs/

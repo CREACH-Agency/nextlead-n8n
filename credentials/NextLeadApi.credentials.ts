@@ -8,6 +8,7 @@ import {
 export class NextLeadApi implements ICredentialType {
 	name = 'nextLeadApi';
 	displayName = 'NextLead API';
+	icon = 'file:nextlead.svg' as const;
 	documentationUrl = 'https://dashboard.nextlead.app/en/api-documentation';
 	properties: INodeProperties[] = [
 		{

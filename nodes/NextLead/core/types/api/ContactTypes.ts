@@ -90,7 +90,7 @@ export interface ContactResponse extends IDataObject, ContactBaseFields {
 	id: string;
 	createdAt: string;
 	updatedAt: string;
-	customFields?: Record<string, any>;
+	customFields?: Record<string, unknown>;
 }
 
 export interface ContactTeamMember extends IDataObject {

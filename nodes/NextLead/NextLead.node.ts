@@ -37,6 +37,7 @@ export class NextLead implements INodeType {
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
 		description: 'Interact with NextLead CRM API',
+		usableAsTool: true,
 		defaults: {
 			name: 'NextLead',
 		},
@@ -142,7 +143,11 @@ export class NextLead implements INodeType {
 						json: true,
 					};
 
-					const response = await this.helpers.request(requestOptions);
+					const response = await this.helpers.httpRequestWithAuthentication.call(
+						this,
+						'nextLeadApi',
+						requestOptions,
+					);
 
 					if (Array.isArray(response)) {
 						return (response as ConversionStatus[]).map((status) => ({
@@ -154,9 +159,7 @@ export class NextLead implements INodeType {
 					// If API call fails, return empty array
 					// The user must configure conversion statuses in NextLead first
 					return [];
-				} catch (error) {
-					// Return empty array on error
-					// The user must configure conversion statuses in NextLead first
+				} catch {
 					return [];
 				}
 			},
@@ -172,7 +175,11 @@ export class NextLead implements INodeType {
 						json: true,
 					};
 
-					const response = await this.helpers.request(requestOptions);
+					const response = await this.helpers.httpRequestWithAuthentication.call(
+						this,
+						'nextLeadApi',
+						requestOptions,
+					);
 
 					if (Array.isArray(response)) {
 						return response.map((column: { id: string; name: string }) => ({
@@ -182,7 +189,7 @@ export class NextLead implements INodeType {
 					}
 
 					return [];
-				} catch (error) {
+				} catch {
 					return [];
 				}
 			},
@@ -198,7 +205,11 @@ export class NextLead implements INodeType {
 						json: true,
 					};
 
-					const response = await this.helpers.request(requestOptions);
+					const response = await this.helpers.httpRequestWithAuthentication.call(
+						this,
+						'nextLeadApi',
+						requestOptions,
+					);
 
 					if (Array.isArray(response)) {
 						return response.map((column: { id: string; name: string }) => ({
@@ -208,7 +219,7 @@ export class NextLead implements INodeType {
 					}
 
 					return [];
-				} catch (error) {
+				} catch {
 					return [];
 				}
 			},
@@ -224,7 +235,11 @@ export class NextLead implements INodeType {
 						json: true,
 					};
 
-					const response = await this.helpers.request(requestOptions);
+					const response = await this.helpers.httpRequestWithAuthentication.call(
+						this,
+						'nextLeadApi',
+						requestOptions,
+					);
 
 					if (Array.isArray(response)) {
 						return response.map((member: { id: string; name: string }) => ({
@@ -234,7 +249,7 @@ export class NextLead implements INodeType {
 					}
 
 					return [];
-				} catch (error) {
+				} catch {
 					return [];
 				}
 			},
@@ -250,7 +265,11 @@ export class NextLead implements INodeType {
 						json: true,
 					};
 
-					const response = await this.helpers.request(requestOptions);
+					const response = await this.helpers.httpRequestWithAuthentication.call(
+						this,
+						'nextLeadApi',
+						requestOptions,
+					);
 					const structures = Array.isArray(response)
 						? response
 						: Array.isArray((response as { data?: unknown[] }).data)
@@ -268,7 +287,7 @@ export class NextLead implements INodeType {
 					}
 
 					return [];
-				} catch (error) {
+				} catch {
 					return [];
 				}
 			},
@@ -284,7 +303,11 @@ export class NextLead implements INodeType {
 						json: true,
 					};
 
-					const response = await this.helpers.request(requestOptions);
+					const response = await this.helpers.httpRequestWithAuthentication.call(
+						this,
+						'nextLeadApi',
+						requestOptions,
+					);
 
 					if (Array.isArray(response)) {
 						return response.map((list: { id: string; name: string }) => ({
@@ -294,7 +317,7 @@ export class NextLead implements INodeType {
 					}
 
 					return [];
-				} catch (error) {
+				} catch {
 					return [];
 				}
 			},
@@ -310,7 +333,11 @@ export class NextLead implements INodeType {
 						json: true,
 					};
 
-					const response = await this.helpers.request(requestOptions);
+					const response = await this.helpers.httpRequestWithAuthentication.call(
+						this,
+						'nextLeadApi',
+						requestOptions,
+					);
 
 					if (Array.isArray(response)) {
 						return response.map((group: { id: string; name: string }) => ({
@@ -320,7 +347,7 @@ export class NextLead implements INodeType {
 					}
 
 					return [];
-				} catch (error) {
+				} catch {
 					return [];
 				}
 			},
@@ -336,7 +363,11 @@ export class NextLead implements INodeType {
 						json: true,
 					};
 
-					const response = await this.helpers.request(requestOptions);
+					const response = await this.helpers.httpRequestWithAuthentication.call(
+						this,
+						'nextLeadApi',
+						requestOptions,
+					);
 
 					if (Array.isArray(response)) {
 						return response.map((field: { id: string; name: string; groupName?: string }) => ({
@@ -346,7 +377,7 @@ export class NextLead implements INodeType {
 					}
 
 					return [];
-				} catch (error) {
+				} catch {
 					return [];
 				}
 			},
@@ -373,7 +404,11 @@ export class NextLead implements INodeType {
 						json: true,
 					};
 
-					const response = await this.helpers.request(requestOptions);
+					const response = await this.helpers.httpRequestWithAuthentication.call(
+						this,
+						'nextLeadApi',
+						requestOptions,
+					);
 					const structures = Array.isArray(response)
 						? response
 						: Array.isArray((response as { data?: unknown[] }).data)
@@ -395,7 +430,7 @@ export class NextLead implements INodeType {
 							})
 							.filter((item): item is { name: string; value: string } => item !== null),
 					};
-				} catch (error) {
+				} catch {
 					return { results: [] };
 				}
 			},

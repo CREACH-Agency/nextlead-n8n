@@ -20,6 +20,7 @@ export class NextLeadTrigger implements INodeType {
 		version: 1,
 		subtitle: '={{$parameter["event"]}}',
 		description: 'Trigger workflows on NextLead events through polling',
+		usableAsTool: true,
 		defaults: {
 			name: 'NextLead Trigger',
 		},
