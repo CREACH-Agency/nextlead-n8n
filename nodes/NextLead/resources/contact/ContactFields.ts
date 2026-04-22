@@ -307,6 +307,47 @@ const createFields = [
 		],
 	},
 	{
+		displayName: 'Note',
+		name: 'note',
+		type: 'fixedCollection' as const,
+		default: {},
+		displayOptions: { show: { resource: ['contact'], operation: ['create'] } },
+		description: 'Add a note to the contact upon creation',
+		typeOptions: { multipleValues: false },
+		options: [
+			{
+				name: 'noteData',
+				displayName: 'Note',
+				values: [
+					{
+						displayName: 'Content',
+						name: 'note_content',
+						type: 'string' as const,
+						typeOptions: { rows: 4 },
+						default: '',
+						description: 'Text content of the note',
+					},
+					{
+						displayName: 'Title',
+						name: 'note_title',
+						type: 'string' as const,
+						default: '',
+						description: 'Optional title for the note',
+					},
+					{
+						displayName: 'Author User Name or ID',
+						name: 'note_author_user_id',
+						type: 'options' as const,
+						typeOptions: { loadOptionsMethod: 'getTeamMembers' },
+						default: '',
+						description:
+							'User who authored the note. Defaults to the assigned user if not specified. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+					},
+				],
+			},
+		],
+	},
+	{
 		displayName: 'Create & Link Structure',
 		name: 'newStructure',
 		type: 'fixedCollection' as const,
@@ -426,6 +467,47 @@ const updateFields = [
 			...FieldDefinitionUtils.getCommonContactFields(),
 		],
 	}),
+	{
+		displayName: 'Note',
+		name: 'noteUpdate',
+		type: 'fixedCollection' as const,
+		default: {},
+		displayOptions: { show: { resource: ['contact'], operation: ['update'] } },
+		description: 'Add a note to the contact upon update',
+		typeOptions: { multipleValues: false },
+		options: [
+			{
+				name: 'noteData',
+				displayName: 'Note',
+				values: [
+					{
+						displayName: 'Content',
+						name: 'note_content',
+						type: 'string' as const,
+						typeOptions: { rows: 4 },
+						default: '',
+						description: 'Text content of the note',
+					},
+					{
+						displayName: 'Title',
+						name: 'note_title',
+						type: 'string' as const,
+						default: '',
+						description: 'Optional title for the note',
+					},
+					{
+						displayName: 'Author User Name or ID',
+						name: 'note_author_user_id',
+						type: 'options' as const,
+						typeOptions: { loadOptionsMethod: 'getTeamMembers' },
+						default: '',
+						description:
+							'User who authored the note. Defaults to the assigned user if not specified. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+					},
+				],
+			},
+		],
+	},
 	{
 		displayName: 'Link Structure',
 		name: 'linkStructure',
