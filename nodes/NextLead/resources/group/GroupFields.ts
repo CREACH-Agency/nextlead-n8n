@@ -65,6 +65,4 @@ const createFields = [
 	}),
 ];
 
-export const groupFields: INodeProperties[] = [
-	...createFields,
-];
+export const groupFields: INodeProperties[] = [...createFields];

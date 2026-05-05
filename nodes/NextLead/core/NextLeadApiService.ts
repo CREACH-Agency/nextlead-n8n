@@ -77,6 +77,7 @@ export class NextLeadApiService {
 				success: false,
 				error: nextLeadError.message,
 				data: null,
+				httpError: error,
 			};
 		}
 	}

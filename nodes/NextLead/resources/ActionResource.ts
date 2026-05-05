@@ -64,7 +64,7 @@ export class ActionResource implements IResourceStrategy {
 
 		const response = await apiService.createAction(context, actionData);
 
-		return ResponseUtils.formatSingleResponse(response);
+		return ResponseUtils.formatSingleResponse(context, response);
 	}
 
 	private async handleUpdateAction(
@@ -84,7 +84,7 @@ export class ActionResource implements IResourceStrategy {
 
 		const response = await apiService.updateAction(context, updateData);
 
-		return ResponseUtils.formatSingleResponse(response);
+		return ResponseUtils.formatSingleResponse(context, response);
 	}
 
 	private async handleDeleteAction(
@@ -111,6 +111,6 @@ export class ActionResource implements IResourceStrategy {
 	): Promise<INodeExecutionData[]> {
 		const response = await apiService.getActionsColumns(context);
 
-		return ResponseUtils.formatArrayResponse(response);
+		return ResponseUtils.formatArrayResponse(context, response);
 	}
 }
