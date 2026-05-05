@@ -41,6 +41,6 @@ export class IdentifyResource implements IResourceStrategy {
 	): Promise<INodeExecutionData[]> {
 		const response = await apiService.identifyUser(context);
 
-		return ResponseUtils.formatSingleResponse(response);
+		return ResponseUtils.formatSingleResponse(context, response);
 	}
 }

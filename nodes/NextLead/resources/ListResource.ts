@@ -52,7 +52,7 @@ export class ListResource implements IResourceStrategy {
 
 		const response = await apiService.createList(context, listData);
 
-		return ResponseUtils.formatSingleResponse(response);
+		return ResponseUtils.formatSingleResponse(context, response);
 	}
 
 	private async handleGetManyLists(
@@ -61,6 +61,6 @@ export class ListResource implements IResourceStrategy {
 	): Promise<INodeExecutionData[]> {
 		const response = await apiService.getLists(context);
 
-		return ResponseUtils.formatArrayResponse(response);
+		return ResponseUtils.formatArrayResponse(context, response);
 	}
 }

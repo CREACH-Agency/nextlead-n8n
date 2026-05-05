@@ -39,11 +39,14 @@ export class ContactResource implements IResourceStrategy {
 			case 'linkToStructure':
 				return this.handleLinkToStructure(context, itemIndex, apiService);
 			case 'getTeam':
-				return ResponseUtils.formatArrayResponse(await apiService.getTeam(context));
+				return ResponseUtils.formatArrayResponse(context, await apiService.getTeam(context));
 			case 'getConversion':
-				return ResponseUtils.formatArrayResponse(await apiService.getConversion(context));
+				return ResponseUtils.formatArrayResponse(context, await apiService.getConversion(context));
 			case 'getCustomFields':
-				return ResponseUtils.formatArrayResponse(await apiService.getCustomFields(context));
+				return ResponseUtils.formatArrayResponse(
+					context,
+					await apiService.getCustomFields(context),
+				);
 			default:
 				throw new Error(`Unknown operation: ${operation}`);
 		}
@@ -113,7 +116,7 @@ export class ContactResource implements IResourceStrategy {
 		const contactResponse = await apiService.createContact(context, contactData);
 
 		if (!contactResponse.success || !newStructureName) {
-			return ResponseUtils.formatSingleResponse(contactResponse);
+			return ResponseUtils.formatSingleResponse(context, contactResponse);
 		}
 
 		const { setAsMainStructure, ...structurePayload } = newStructureInput as {
@@ -129,7 +132,7 @@ export class ContactResource implements IResourceStrategy {
 		const structureResponse = await apiService.createStructure(context, structureData);
 
 		if (!structureResponse.success) {
-			return ResponseUtils.formatSingleResponse({
+			return ResponseUtils.formatSingleResponse(context, {
 				success: true,
 				data: {
 					contact: contactResponse.data,
@@ -153,7 +156,7 @@ export class ContactResource implements IResourceStrategy {
 		context.logger.info('Linking structure to contact with data:', linkData);
 		const linkResponse = await apiService.linkStructureToContact(context, linkData);
 
-		return ResponseUtils.formatSingleResponse({
+		return ResponseUtils.formatSingleResponse(context, {
 			success: true,
 			data: {
 				contact: contactResponse.data,
@@ -177,12 +180,19 @@ export class ContactResource implements IResourceStrategy {
 		const rawUpdateFields = context.getNodeParameter('updateFields', itemIndex) as IDataObject;
 
 		// Extract linkStructure fixedCollection
-		const linkStructureWrapper = context.getNodeParameter('linkStructure', itemIndex, {}) as IDataObject;
+		const linkStructureWrapper = context.getNodeParameter(
+			'linkStructure',
+			itemIndex,
+			{},
+		) as IDataObject;
 		const linkStructureInput = (linkStructureWrapper.structure ?? {}) as IDataObject;
 
 		if (linkStructureInput.structureId) {
 			const locator = linkStructureInput.structureId as IDataObject;
-			rawUpdateFields.structureId = (typeof locator === 'object' ? locator.value as string : locator as unknown as string) || '';
+			rawUpdateFields.structureId =
+				(typeof locator === 'object'
+					? (locator.value as string)
+					: (locator as unknown as string)) || '';
 			rawUpdateFields.setAsMainStructure = linkStructureInput.setAsMainStructure !== false;
 		}
 
@@ -203,7 +213,10 @@ export class ContactResource implements IResourceStrategy {
 			}),
 		};
 
-		return ResponseUtils.formatSingleResponse(await apiService.updateContact(context, updateData));
+		return ResponseUtils.formatSingleResponse(
+			context,
+			await apiService.updateContact(context, updateData),
+		);
 	}
 
 	private async handleDelete(
@@ -239,7 +252,7 @@ export class ContactResource implements IResourceStrategy {
 			...(linkedinUrl && { linkedin_url: linkedinUrl }),
 		});
 
-		return ResponseUtils.formatSingleResponse(response);
+		return ResponseUtils.formatSingleResponse(context, response);
 	}
 
 	private async handleLinkToStructure(
@@ -294,6 +307,6 @@ export class ContactResource implements IResourceStrategy {
 		}
 
 		const response = await apiService.linkContactToStructure(context, linkData);
-		return ResponseUtils.formatSingleResponse(response);
+		return ResponseUtils.formatSingleResponse(context, response);
 	}
 }

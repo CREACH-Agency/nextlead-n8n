@@ -69,7 +69,4 @@ const createFields = [
 
 const getManyFields: INodeProperties[] = [];
 
-export const listFields: INodeProperties[] = [
-	...createFields,
-	...getManyFields,
-];
+export const listFields: INodeProperties[] = [...createFields, ...getManyFields];

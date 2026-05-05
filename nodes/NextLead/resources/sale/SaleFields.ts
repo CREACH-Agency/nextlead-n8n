@@ -128,7 +128,8 @@ const updateFields = [
 	FieldDefinitionUtils.createStringField({
 		name: 'search_name',
 		displayName: 'Search Sale',
-		description: 'Exact name of the sale to update. Used to target the precise sale instead of the most recent one.',
+		description:
+			'Exact name of the sale to update. Used to target the precise sale instead of the most recent one.',
 		required: true,
 		operations: ['update'],
 	}),
@@ -191,7 +192,8 @@ const deleteFields = [
 	FieldDefinitionUtils.createStringField({
 		name: 'search_name',
 		displayName: 'Search Sale',
-		description: 'Exact name of the sale to delete. Used to target the precise sale instead of the most recent one.',
+		description:
+			'Exact name of the sale to delete. Used to target the precise sale instead of the most recent one.',
 		required: true,
 		operations: ['delete'],
 	}),

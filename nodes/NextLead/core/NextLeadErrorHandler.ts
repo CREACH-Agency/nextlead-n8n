@@ -1,49 +1,77 @@
-import { IDataObject, NodeOperationError, INode } from 'n8n-workflow';
+import { IDataObject, INode, JsonObject, NodeApiError, NodeOperationError } from 'n8n-workflow';
 import { createNextLeadError } from './types/n8n/ErrorTypes';
 
+const STATUS_DESCRIPTIONS: Record<number, { message: string; description: string }> = {
+	401: {
+		message: 'Authentication failed. Please check your NextLead API credentials.',
+		description: 'The API key might be invalid or expired.',
+	},
+	403: {
+		message: 'API Error: Forbidden - perhaps check your credentials?',
+		description: 'Please check your input data and try again.',
+	},
+	404: {
+		message: 'Organization not found. Please check your domain configuration.',
+		description: 'The organization associated with your API key was not found.',
+	},
+	429: {
+		message: 'Rate limit exceeded. Please try again later.',
+		description: 'Too many requests have been made to the API.',
+	},
+};
+
 export class NextLeadErrorHandler {
-	static handleApiError(error: unknown, node: INode): NodeOperationError {
+	/**
+	 * Wrap an HTTP error in a NodeApiError so n8n surfaces the original HTTP
+	 * response (status code, body, headers) in the UI. The original error is
+	 * forwarded as `errorResponse` and we only override the human-friendly
+	 * `message`/`description` for known status codes.
+	 */
+	static handleApiError(error: unknown, node: INode): NodeApiError | NodeOperationError {
+		// If the error has already been wrapped as a NodeApiError or
+		// NodeOperationError (e.g. by ResponseUtils), forward it untouched —
+		// re-wrapping would strip the HTTP response details.
+		if (error instanceof NodeApiError || error instanceof NodeOperationError) {
+			return error;
+		}
+
 		const nextLeadError = createNextLeadError(error);
-		if (nextLeadError.statusCode === 401) {
-			return new NodeOperationError(
-				node,
-				'Authentication failed. Please check your NextLead API credentials.',
-				{ description: 'The API key might be invalid or expired.' },
-			);
-		}
+		const statusCode = nextLeadError.statusCode;
 
-		if (nextLeadError.statusCode === 404) {
-			return new NodeOperationError(
-				node,
-				'Organization not found. Please check your domain configuration.',
-				{ description: 'The organization associated with your API key was not found.' },
-			);
-		}
-
-		if (nextLeadError.statusCode === 429) {
-			return new NodeOperationError(node, 'Rate limit exceeded. Please try again later.', {
-				description: 'Too many requests have been made to the API.',
+		// If the error is not an HTTP error (no status code, plain Error, etc.)
+		// fall back to NodeOperationError so we don't fabricate HTTP context.
+		if (!statusCode) {
+			return new NodeOperationError(node, nextLeadError.message || 'An unexpected error occurred', {
+				description: 'Please check your input data and try again.',
 			});
 		}
 
-		if (nextLeadError.statusCode && nextLeadError.statusCode >= 500) {
-			return new NodeOperationError(node, 'NextLead API server error. Please try again later.', {
+		const errorResponse: JsonObject =
+			error && typeof error === 'object'
+				? (error as JsonObject)
+				: ({ message: nextLeadError.message } as JsonObject);
+
+		const known = STATUS_DESCRIPTIONS[statusCode];
+		if (known) {
+			return new NodeApiError(node, errorResponse, {
+				message: known.message,
+				description: known.description,
+				httpCode: String(statusCode),
+			});
+		}
+
+		if (statusCode >= 500) {
+			return new NodeApiError(node, errorResponse, {
+				message: 'NextLead API server error. Please try again later.',
 				description: 'The NextLead API is experiencing issues.',
+				httpCode: String(statusCode),
 			});
 		}
 
-		if (nextLeadError.statusCode === 403) {
-			return new NodeOperationError(
-				node,
-				'API Error: Forbidden - perhaps check your credentials?',
-				{
-					description: 'Please check your input data and try again.',
-				},
-			);
-		}
-
-		return new NodeOperationError(node, nextLeadError.message || 'An unexpected error occurred', {
+		return new NodeApiError(node, errorResponse, {
+			message: nextLeadError.message || 'An unexpected error occurred',
 			description: 'Please check your input data and try again.',
+			httpCode: String(statusCode),
 		});
 	}
 

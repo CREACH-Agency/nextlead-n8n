@@ -113,7 +113,8 @@ const updateFields = [
 	FieldDefinitionUtils.createStringField({
 		name: 'search_title',
 		displayName: 'Search Action',
-		description: 'Exact title of the action to update. Used to target the precise action instead of the most recent one.',
+		description:
+			'Exact title of the action to update. Used to target the precise action instead of the most recent one.',
 		required: true,
 		operations: ['update'],
 	}),
@@ -172,14 +173,11 @@ const deleteFields = [
 	FieldDefinitionUtils.createStringField({
 		name: 'search_title',
 		displayName: 'Search Action',
-		description: 'Exact title of the action to delete. Used to target the precise action instead of the most recent one.',
+		description:
+			'Exact title of the action to delete. Used to target the precise action instead of the most recent one.',
 		required: true,
 		operations: ['delete'],
 	}),
 ];
 
-export const actionFields: INodeProperties[] = [
-	...createFields,
-	...updateFields,
-	...deleteFields,
-];
+export const actionFields: INodeProperties[] = [...createFields, ...updateFields, ...deleteFields];
