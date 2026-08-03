@@ -7,6 +7,7 @@ export interface N8nRequestOptions {
 	body?: IDataObject;
 	qs?: IDataObject;
 	headers?: Record<string, string>;
+	timeout?: number;
 }
 
 export interface RequestConfig {
@@ -14,6 +15,8 @@ export interface RequestConfig {
 	endpoint: string;
 	data?: IDataObject;
 	queryParams?: IDataObject;
+	/** Request timeout in ms, for endpoints slower than the default */
+	timeout?: number;
 }
 
 export interface NextLeadCredentials {

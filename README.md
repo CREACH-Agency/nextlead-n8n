@@ -18,7 +18,10 @@ Community node for [n8n](https://n8n.io) that integrates [NextLead CRM](https://
 | **Group** | Create, Update, Delete, List |
 | **List** | Create, Update, Delete |
 | **Identify** | Identify visitor |
+| **AI** | Run — send a natural language prompt to the NextLead AI agent |
 | **Trigger** | Poll for new/updated contacts and events |
+
+> **AI → Run** is read-only by default. Writes require both the explicit **Allow Mutations** toggle and sufficient permissions for the member selected in **Execute as User**, whose role is enforced server-side.
 
 ---
 
@@ -47,6 +50,7 @@ nodes/NextLead/
 │   ├── GroupResource.ts
 │   ├── ListResource.ts
 │   ├── IdentifyResource.ts
+│   ├── AiResource.ts
 │   └── <resource>/
 │       └── <Resource>Fields.ts   # n8n field definitions per resource
 └── utils/

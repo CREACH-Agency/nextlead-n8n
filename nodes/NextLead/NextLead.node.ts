@@ -16,12 +16,14 @@ import { OperationType, ResourceType } from './core/types/NextLeadTypes';
 import { NextLeadCredentials } from './core/types/n8n/RequestTypes';
 import { ConversionStatus } from './core/types/shared/ApiTypes';
 import { ActionResource } from './resources/ActionResource';
+import { AiResource } from './resources/AiResource';
 import { ContactResource } from './resources/ContactResource';
 import { GroupResource } from './resources/GroupResource';
 import { IdentifyResource } from './resources/IdentifyResource';
 import { ListResource } from './resources/ListResource';
 import { SaleResource } from './resources/SaleResource';
 import { StructureResource } from './resources/StructureResource';
+import { fetchTeamMembers } from './utils/TeamMemberUtils';
 
 export class NextLead implements INodeType {
 	description: INodeTypeDescription = {
@@ -59,6 +61,10 @@ export class NextLead implements INodeType {
 					{
 						name: 'Action',
 						value: 'action',
+					},
+					{
+						name: 'AI',
+						value: 'ai',
 					},
 					{
 						name: 'Contact',
@@ -110,6 +116,7 @@ export class NextLead implements INodeType {
 		manager.register(new ListResource());
 		manager.register(new GroupResource());
 		manager.register(new IdentifyResource());
+		manager.register(new AiResource());
 		return manager;
 	}
 
@@ -217,34 +224,12 @@ export class NextLead implements INodeType {
 				}
 			},
 			async getTeamMembers(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				try {
-					const credentials = (await this.getCredentials('nextLeadApi')) as NextLeadCredentials;
-					const requestOptions = {
-						method: 'GET' as const,
-						url: `${credentials.domain}/api/v2/receive/contact/get-team`,
-						headers: {
-							Authorization: `Bearer ${credentials.apiKey}`,
-						},
-						json: true,
-					};
+				const members = await fetchTeamMembers(this);
 
-					const response = await this.helpers.httpRequestWithAuthentication.call(
-						this,
-						'nextLeadApi',
-						requestOptions,
-					);
-
-					if (Array.isArray(response)) {
-						return response.map((member: { id: string; name: string }) => ({
-							name: member.name,
-							value: member.id,
-						}));
-					}
-
-					return [];
-				} catch {
-					return [];
-				}
+				return members.map((member) => ({
+					name: member.label,
+					value: member.id,
+				}));
 			},
 			async getEstablishments(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				try {
@@ -376,6 +361,19 @@ export class NextLead implements INodeType {
 			},
 		},
 		listSearch: {
+			async searchTeamMembers(
+				this: ILoadOptionsFunctions,
+				filter?: string,
+			): Promise<INodeListSearchResult> {
+				const members = await fetchTeamMembers(this);
+				const searchTerm = (filter ?? '').trim().toLowerCase();
+
+				return {
+					results: members
+						.filter((member) => !searchTerm || member.label.toLowerCase().includes(searchTerm))
+						.map((member) => ({ name: member.label, value: member.id })),
+				};
+			},
 			async searchStructures(
 				this: ILoadOptionsFunctions,
 				filter?: string,
