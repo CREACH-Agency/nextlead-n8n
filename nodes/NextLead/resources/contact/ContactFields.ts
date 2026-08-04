@@ -37,12 +37,6 @@ export const contactOperations: INodeProperties[] = [
 			},
 			{ name: 'Get Custom Fields', value: 'getCustomFields', action: 'Get custom fields' },
 			{
-				name: 'Get Limit Status',
-				value: 'getLimitStatus',
-				description: 'Check contact limit and usage',
-				action: 'Get contact limit status',
-			},
-			{
 				name: 'Get Team',
 				value: 'getTeam',
 				description: 'Get team members',

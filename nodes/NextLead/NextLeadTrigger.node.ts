@@ -5,11 +5,60 @@ import {
 	INodeExecutionData,
 	IDataObject,
 	NodeConnectionType,
+	NodeOperationError,
 } from 'n8n-workflow';
 
 import { NextLeadApiService } from './core/NextLeadApiService';
+import { NextLeadApiResponse } from './core/types/shared/ApiTypes';
 import { NextLeadCredentials } from './core/types/n8n/RequestTypes';
 import { NextLeadErrorHandler } from './core/NextLeadErrorHandler';
+import { unwrapArray } from './utils/MetadataCache';
+import { DedupStrategy, PollDedupStore } from './utils/PollDedup';
+
+interface EventConfig {
+	fetch: (apiService: NextLeadApiService, context: IPollFunctions) => Promise<NextLeadApiResponse>;
+	strategy: DedupStrategy;
+}
+
+/**
+ * Every event is deduplicated. The queues behind these routes are not consumed
+ * on read, so an event left undeduplicated re-fires the workflow on each poll
+ * for as long as the row stays queued.
+ */
+const EVENT_CONFIG: Record<string, EventConfig> = {
+	contactCreated: {
+		fetch: (apiService, context) => apiService.pollContactsCreated(context),
+		strategy: 'id',
+	},
+	contactUpdated: {
+		fetch: (apiService, context) => apiService.pollContactsUpdated(context),
+		strategy: 'versioned',
+	},
+	contactDeleted: {
+		fetch: (apiService, context) => apiService.pollContactsDeleted(context),
+		strategy: 'versioned',
+	},
+	structureCreated: {
+		fetch: (apiService, context) => apiService.pollStructuresCreated(context),
+		strategy: 'id',
+	},
+	structureUpdated: {
+		fetch: (apiService, context) => apiService.pollStructuresUpdated(context),
+		strategy: 'versioned',
+	},
+	structureDeleted: {
+		fetch: (apiService, context) => apiService.pollStructuresDeleted(context),
+		strategy: 'versioned',
+	},
+	emailAddedToList: {
+		fetch: (apiService, context) => apiService.pollEmailAddedToList(context),
+		strategy: 'emailList',
+	},
+	emailRemovedFromList: {
+		fetch: (apiService, context) => apiService.pollEmailRemovedFromList(context),
+		strategy: 'versioned',
+	},
+};
 
 export class NextLeadTrigger implements INodeType {
 	description: INodeTypeDescription = {
@@ -87,132 +136,57 @@ export class NextLeadTrigger implements INodeType {
 	};
 
 	async poll(this: IPollFunctions): Promise<INodeExecutionData[][] | null> {
-		const webhookData = this.getWorkflowStaticData('node');
 		const event = this.getNodeParameter('event') as string;
+		const config = EVENT_CONFIG[event];
 
-		// Initialize processed IDs if not exists
-		if (!webhookData.processedIds) {
-			webhookData.processedIds = {
-				contacts: [],
-				structures: [],
-				emailLists: [],
-			};
+		if (!config) {
+			throw new NodeOperationError(this.getNode(), `Unknown NextLead trigger event: ${event}`);
 		}
-
-		const processedIds = webhookData.processedIds as {
-			contacts: string[];
-			structures: string[];
-			emailLists: string[];
-		};
 
 		try {
 			const credentials = (await this.getCredentials('nextLeadApi')) as NextLeadCredentials;
 			const apiService = new NextLeadApiService(credentials);
 
-			let response;
-			let newItems: IDataObject[] = [];
+			const response = await config.fetch(apiService, this);
 
-			switch (event) {
-				case 'contactCreated':
-					response = await apiService.pollContactsCreated(this);
-					if (response.success && response.data && Array.isArray(response.data)) {
-						for (const item of response.data) {
-							if (item.id && !processedIds.contacts.includes(item.id)) {
-								newItems.push(item as IDataObject);
-								processedIds.contacts.push(item.id);
-							}
-						}
-						// Keep only last 1000 IDs
-						if (processedIds.contacts.length > 1000) {
-							processedIds.contacts = processedIds.contacts.slice(-1000);
-						}
-					}
-					break;
-
-				case 'contactUpdated':
-					response = await apiService.pollContactsUpdated(this);
-					if (response.success && response.data && Array.isArray(response.data)) {
-						// For updates, return all items
-						newItems = response.data as IDataObject[];
-					}
-					break;
-
-				case 'contactDeleted':
-					response = await apiService.pollContactsDeleted(this);
-					if (response.success && response.data && Array.isArray(response.data)) {
-						// For deletions, return all items
-						newItems = response.data as IDataObject[];
-					}
-					break;
-
-				case 'structureCreated':
-					response = await apiService.pollStructuresCreated(this);
-					if (response.success && response.data && Array.isArray(response.data)) {
-						for (const item of response.data) {
-							if (item.id && !processedIds.structures.includes(item.id)) {
-								newItems.push(item as IDataObject);
-								processedIds.structures.push(item.id);
-							}
-						}
-						// Keep only last 1000 IDs
-						if (processedIds.structures.length > 1000) {
-							processedIds.structures = processedIds.structures.slice(-1000);
-						}
-					}
-					break;
-
-				case 'structureUpdated':
-					response = await apiService.pollStructuresUpdated(this);
-					if (response.success && response.data && Array.isArray(response.data)) {
-						// For updates, return all items
-						newItems = response.data as IDataObject[];
-					}
-					break;
-
-				case 'structureDeleted':
-					response = await apiService.pollStructuresDeleted(this);
-					if (response.success && response.data && Array.isArray(response.data)) {
-						// For deletions, return all items
-						newItems = response.data as IDataObject[];
-					}
-					break;
-
-				case 'emailAddedToList':
-					response = await apiService.pollEmailAddedToList(this);
-					if (response.success && response.data && Array.isArray(response.data)) {
-						for (const item of response.data) {
-							const compositeKey = `${item.email}_${item.listId}`;
-							if (!processedIds.emailLists.includes(compositeKey)) {
-								newItems.push(item as IDataObject);
-								processedIds.emailLists.push(compositeKey);
-							}
-						}
-						// Keep only last 1000 IDs
-						if (processedIds.emailLists.length > 1000) {
-							processedIds.emailLists = processedIds.emailLists.slice(-1000);
-						}
-					}
-					break;
-
-				case 'emailRemovedFromList':
-					response = await apiService.pollEmailRemovedFromList(this);
-					if (response.success && response.data && Array.isArray(response.data)) {
-						// For removals, return all items
-						newItems = response.data as IDataObject[];
-					}
-					break;
+			// A failed poll used to be swallowed: the trigger simply never fired and
+			// left no trace, so a revoked key or a 500 looked like "no new events".
+			if (!response.success) {
+				throw NextLeadErrorHandler.handleApiError(
+					response.httpError ?? new Error(response.error ?? 'NextLead polling failed'),
+					this.getNode(),
+				);
 			}
 
-			// Update last poll time
+			const items = unwrapArray<IDataObject>(response.data);
+
+			// "Fetch Test Event" must stay repeatable and must not dump a backlog of
+			// thousands of rows into the editor, so it samples the latest queued
+			// event without recording it.
+			if (this.getMode() === 'manual') {
+				const latest = items[items.length - 1];
+				return latest ? [this.helpers.returnJsonArray([latest])] : null;
+			}
+
+			const webhookData = this.getWorkflowStaticData('node');
+			const store = PollDedupStore.load(webhookData, event);
+			const newItems = store.filterNew(items, config.strategy);
+
+			// Only commit when the queue answered: an empty response must not wipe
+			// a backlog the node would then replay in full on the next poll.
+			if (items.length > 0) {
+				store.persist();
+			}
+
 			webhookData.lastPollTime = new Date().toISOString();
 
-			// Return null if no new items
-			if (newItems.length === 0) {
+			// The first poll only establishes the baseline. Emitting it would fire
+			// the workflow once per historical row still sitting in the queue.
+			if (store.isFirstRun) {
 				return null;
 			}
 
-			// Return new items
-			return [this.helpers.returnJsonArray(newItems)];
+			return newItems.length > 0 ? [this.helpers.returnJsonArray(newItems)] : null;
 		} catch (error) {
 			throw NextLeadErrorHandler.handleApiError(error, this.getNode());
 		}

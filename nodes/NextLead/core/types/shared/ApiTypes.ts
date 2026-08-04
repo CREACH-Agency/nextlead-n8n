@@ -35,7 +35,8 @@ export type ResourceType =
 	| 'action'
 	| 'list'
 	| 'group'
-	| 'identify';
+	| 'identify'
+	| 'ai';
 
 export type OperationType =
 	| 'create'
@@ -50,7 +51,8 @@ export type OperationType =
 	| 'getColumns'
 	| 'user'
 	| 'linkToStructure'
-	| 'linkToContact';
+	| 'linkToContact'
+	| 'run';
 
 export interface ResourceOperation {
 	name: string;

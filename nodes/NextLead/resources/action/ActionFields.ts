@@ -82,15 +82,19 @@ const createFields = [
 			{
 				displayName: 'Note',
 				name: 'note',
-				description: 'Action description note',
+				description: 'Description note attached to the action',
 				default: '',
+				typeOptions: {
+					rows: 3,
+				},
 			},
 			{
 				displayName: 'Date',
 				name: 'date',
-				description: 'Date for the action (YYYY-MM-DD)',
+				type: 'dateTime' as const,
+				description: 'Deadline of the action, sent as an ISO 8601 date',
 				default: '',
-				placeholder: '2024-12-31',
+				placeholder: '2026-07-20T09:00:00.000Z',
 			},
 			{
 				displayName: 'Assigned To',
@@ -133,6 +137,8 @@ const updateFields = [
 			{
 				displayName: 'Stage Name or ID',
 				name: 'column',
+				type: 'options' as const,
+				default: '',
 				description:
 					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 				typeOptions: {
@@ -142,15 +148,19 @@ const updateFields = [
 			{
 				displayName: 'Note',
 				name: 'note',
-				description: 'New note/description',
+				description: 'New description note for the action',
 				default: '',
+				typeOptions: {
+					rows: 3,
+				},
 			},
 			{
 				displayName: 'Date',
 				name: 'date',
-				description: 'New date for the action (YYYY-MM-DD)',
+				type: 'dateTime' as const,
+				description: 'New deadline of the action, sent as an ISO 8601 date',
 				default: '',
-				placeholder: '2024-12-31',
+				placeholder: '2026-07-20T09:00:00.000Z',
 			},
 			{
 				displayName: 'Assigned To',

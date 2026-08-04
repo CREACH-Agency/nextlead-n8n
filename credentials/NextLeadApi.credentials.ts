@@ -44,10 +44,13 @@ export class NextLeadApi implements ICredentialType {
 		},
 	};
 
+	// `identify-user` is the connection-check endpoint every provider uses and is
+	// exempt from the organization API quota. Testing against a `receive/` route
+	// instead would bill one call each time the credential is saved.
 	test: ICredentialTestRequest = {
 		request: {
 			baseURL: '={{$credentials.domain}}',
-			url: '/api/v2/receive/contact/get-team',
+			url: '/api/v2/identify-user',
 			method: 'GET',
 		},
 	};

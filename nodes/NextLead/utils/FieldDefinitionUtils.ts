@@ -23,7 +23,7 @@ export interface IFieldConfig {
 	name: string;
 	displayName: string;
 	description: string;
-	type?: 'string' | 'number' | 'boolean' | 'options' | 'resourceLocator';
+	type?: 'string' | 'number' | 'boolean' | 'options' | 'resourceLocator' | 'dateTime';
 	options?: IFieldOptionConfig[];
 	modes?: IResourceLocatorModeConfig[];
 	required?: boolean;
