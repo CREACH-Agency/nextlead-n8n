@@ -1,0 +1,11 @@
+# Build scripts pnpm is allowed to run. Since pnpm 11 an unapproved build
+# script is a fatal error (ERR_PNPM_IGNORED_BUILDS) that breaks the CI install.
+# `allowBuilds` is the pnpm 11 setting, `onlyBuiltDependencies` the pnpm 10 one;
+# both are declared so local and CI installs behave the same.
+allowBuilds:
+  eslint-plugin-n8n-nodes-base: true
+  unrs-resolver: true
+
+onlyBuiltDependencies:
+  - eslint-plugin-n8n-nodes-base
+  - unrs-resolver
