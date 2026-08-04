@@ -4,6 +4,7 @@ import { ResourceType, OperationType, NextLeadCredentials } from '../core/types/
 import { IResourceStrategy } from '../core/interfaces/IResourceStrategy';
 import { NextLeadApiService } from '../core/NextLeadApiService';
 import { ResponseUtils } from '../utils/ResponseUtils';
+import { DateUtils } from '../utils/DateUtils';
 import { actionOperations, actionFields } from './action/ActionFields';
 
 export class ActionResource implements IResourceStrategy {
@@ -41,6 +42,22 @@ export class ActionResource implements IResourceStrategy {
 		}
 	}
 
+	/**
+	 * The API stores `date` as the action deadline and parses it with
+	 * `new Date(...)`, answering 400 when it is not parsable. Convert whatever
+	 * the dateTime field produced to ISO 8601 and drop the key when empty.
+	 */
+	private withIsoDate(context: IExecuteFunctions, fields: IDataObject): IDataObject {
+		if (fields.date === undefined) {
+			return fields;
+		}
+
+		const { date, ...rest } = fields;
+		const isoDate = DateUtils.toIso8601OrThrow(context, date, 'Date');
+
+		return isoDate === undefined ? rest : { ...rest, date: isoDate };
+	}
+
 	private async handleCreateAction(
 		context: IExecuteFunctions,
 		itemIndex: number,
@@ -59,7 +76,7 @@ export class ActionResource implements IResourceStrategy {
 			title,
 			column,
 			...(assign_contact && { assign_contact }),
-			...additionalFields,
+			...this.withIsoDate(context, additionalFields),
 		};
 
 		const response = await apiService.createAction(context, actionData);
@@ -79,7 +96,7 @@ export class ActionResource implements IResourceStrategy {
 		const updateData: IDataObject = {
 			contact_email: contactEmail,
 			search_title: searchTitle,
-			...updateFields,
+			...this.withIsoDate(context, updateFields),
 		};
 
 		const response = await apiService.updateAction(context, updateData);
