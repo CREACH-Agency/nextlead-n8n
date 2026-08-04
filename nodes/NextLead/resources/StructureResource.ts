@@ -62,7 +62,7 @@ export class StructureResource implements IResourceStrategy {
 
 		const response = await apiService.createStructure(context, structureData);
 
-		return ResponseUtils.formatSingleResponse(response);
+		return ResponseUtils.formatSingleResponse(context, response);
 	}
 
 	private async handleUpdateStructure(
@@ -71,7 +71,8 @@ export class StructureResource implements IResourceStrategy {
 		apiService: NextLeadApiService,
 	): Promise<INodeExecutionData[]> {
 		const structureLocator = context.getNodeParameter('structureId', itemIndex) as IDataObject;
-		const structureId = (structureLocator.value as string) || (structureLocator as unknown as string);
+		const structureId =
+			(structureLocator.value as string) || (structureLocator as unknown as string);
 		const updateFields = context.getNodeParameter('updateFields', itemIndex, {}) as IDataObject;
 
 		const updateData: IDataObject = {
@@ -81,7 +82,7 @@ export class StructureResource implements IResourceStrategy {
 
 		const response = await apiService.updateStructure(context, updateData);
 
-		return ResponseUtils.formatSingleResponse(response);
+		return ResponseUtils.formatSingleResponse(context, response);
 	}
 
 	private async handleDeleteStructure(
@@ -102,7 +103,7 @@ export class StructureResource implements IResourceStrategy {
 	): Promise<INodeExecutionData[]> {
 		const response = await apiService.getStructures(context);
 
-		return ResponseUtils.formatArrayResponse(response);
+		return ResponseUtils.formatArrayResponse(context, response);
 	}
 
 	private async handleLinkToContact(
@@ -157,6 +158,6 @@ export class StructureResource implements IResourceStrategy {
 		}
 
 		const response = await apiService.linkStructureToContact(context, linkData);
-		return ResponseUtils.formatSingleResponse(response);
+		return ResponseUtils.formatSingleResponse(context, response);
 	}
 }

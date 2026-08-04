@@ -5,6 +5,8 @@ export interface NextLeadApiResponse<T = unknown> {
 	data?: T;
 	error?: string;
 	message?: string;
+	/** Original HTTP error (status code, body, headers) preserved for NodeApiError. */
+	httpError?: unknown;
 }
 
 export interface NextLeadListResponse extends IDataObject {
@@ -26,7 +28,15 @@ export interface ConversionStatus {
 	organizationId?: string;
 }
 
-export type ResourceType = 'contact' | 'structure' | 'sale' | 'action' | 'list' | 'group' | 'identify';
+export type ResourceType =
+	| 'contact'
+	| 'structure'
+	| 'sale'
+	| 'action'
+	| 'list'
+	| 'group'
+	| 'identify'
+	| 'ai';
 
 export type OperationType =
 	| 'create'
@@ -41,7 +51,8 @@ export type OperationType =
 	| 'getColumns'
 	| 'user'
 	| 'linkToStructure'
-	| 'linkToContact';
+	| 'linkToContact'
+	| 'run';
 
 export interface ResourceOperation {
 	name: string;

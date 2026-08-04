@@ -156,8 +156,7 @@ const updateFields = [
 				placeholder: 'structure-id',
 			},
 		],
-		description:
-			'Choose from the structure list using search, or specify an ID directly',
+		description: 'Choose from the structure list using search, or specify an ID directly',
 	},
 	FieldDefinitionUtils.createCollectionField({
 		name: 'updateFields',

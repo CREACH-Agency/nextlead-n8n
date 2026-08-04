@@ -62,7 +62,7 @@ export class SaleResource implements IResourceStrategy {
 
 		const response = await apiService.createSale(context, saleData);
 
-		return ResponseUtils.formatSingleResponse(response);
+		return ResponseUtils.formatSingleResponse(context, response);
 	}
 
 	private async handleUpdateSale(
@@ -82,7 +82,7 @@ export class SaleResource implements IResourceStrategy {
 
 		const response = await apiService.updateSale(context, updateData);
 
-		return ResponseUtils.formatSingleResponse(response);
+		return ResponseUtils.formatSingleResponse(context, response);
 	}
 
 	private async handleDeleteSale(
@@ -111,6 +111,6 @@ export class SaleResource implements IResourceStrategy {
 	): Promise<INodeExecutionData[]> {
 		const response = await apiService.getSalesColumns(context);
 
-		return ResponseUtils.formatArrayResponse(response);
+		return ResponseUtils.formatArrayResponse(context, response);
 	}
 }

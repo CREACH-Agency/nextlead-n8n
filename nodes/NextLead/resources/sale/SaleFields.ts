@@ -128,7 +128,8 @@ const updateFields = [
 	FieldDefinitionUtils.createStringField({
 		name: 'search_name',
 		displayName: 'Search Sale',
-		description: 'Exact name of the sale to update. Used to target the precise sale instead of the most recent one.',
+		description:
+			'Exact name of the sale to update. Used to target the precise sale instead of the most recent one.',
 		required: true,
 		operations: ['update'],
 	}),
@@ -151,6 +152,8 @@ const updateFields = [
 			{
 				displayName: 'Stage Name or ID',
 				name: 'column',
+				type: 'options' as const,
+				default: '',
 				description:
 					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 				typeOptions: {
@@ -191,7 +194,8 @@ const deleteFields = [
 	FieldDefinitionUtils.createStringField({
 		name: 'search_name',
 		displayName: 'Search Sale',
-		description: 'Exact name of the sale to delete. Used to target the precise sale instead of the most recent one.',
+		description:
+			'Exact name of the sale to delete. Used to target the precise sale instead of the most recent one.',
 		required: true,
 		operations: ['delete'],
 	}),

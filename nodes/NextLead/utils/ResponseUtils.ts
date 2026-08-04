@@ -1,14 +1,48 @@
-import { INodeExecutionData, IDataObject } from 'n8n-workflow';
+import {
+	IExecuteFunctions,
+	IPollFunctions,
+	INodeExecutionData,
+	IDataObject,
+	JsonObject,
+	NodeApiError,
+	NodeOperationError,
+} from 'n8n-workflow';
 import { NextLeadApiResponse } from '../core/types/shared/ApiTypes';
 
+type NodeContext = IExecuteFunctions | IPollFunctions;
+
 export class ResponseUtils {
+	/**
+	 * Throw a NodeApiError when the response carries an original HTTP error
+	 * (preserves status code, body and headers in the n8n UI). Falls back to
+	 * NodeOperationError when the failure was synthesized without HTTP context.
+	 */
+	private static throwApiError(context: NodeContext, response: NextLeadApiResponse): never {
+		const node = context.getNode();
+		const message = response.error || response.message || 'Unknown error';
+
+		if (response.httpError !== undefined && response.httpError !== null) {
+			const errorResponse: JsonObject =
+				typeof response.httpError === 'object'
+					? (response.httpError as JsonObject)
+					: ({ message } as JsonObject);
+
+			throw new NodeApiError(node, errorResponse, { message });
+		}
+
+		throw new NodeOperationError(node, `API Error: ${message}`);
+	}
+
 	/**
 	 * Convert a NextLead API response to a n8n format
 	 * Handle cases where data can be undefined
 	 */
-	static formatSingleResponse(response: NextLeadApiResponse): INodeExecutionData[] {
+	static formatSingleResponse(
+		context: NodeContext,
+		response: NextLeadApiResponse,
+	): INodeExecutionData[] {
 		if (!response.success) {
-			throw new Error(`API Error: ${response.error || 'Unknown error'}`);
+			ResponseUtils.throwApiError(context, response);
 		}
 
 		// If no data, return an empty but valid object
@@ -19,9 +53,12 @@ export class ResponseUtils {
 	/**
 	 * Convert a NextLead API response with array to a n8n format
 	 */
-	static formatArrayResponse(response: NextLeadApiResponse): INodeExecutionData[] {
+	static formatArrayResponse(
+		context: NodeContext,
+		response: NextLeadApiResponse,
+	): INodeExecutionData[] {
 		if (!response.success) {
-			throw new Error(`API Error: ${response.error || 'Unknown error'}`);
+			ResponseUtils.throwApiError(context, response);
 		}
 
 		let items = response.data;

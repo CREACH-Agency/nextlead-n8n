@@ -37,12 +37,6 @@ export const contactOperations: INodeProperties[] = [
 			},
 			{ name: 'Get Custom Fields', value: 'getCustomFields', action: 'Get custom fields' },
 			{
-				name: 'Get Limit Status',
-				value: 'getLimitStatus',
-				description: 'Check contact limit and usage',
-				action: 'Get contact limit status',
-			},
-			{
 				name: 'Get Team',
 				value: 'getTeam',
 				description: 'Get team members',
@@ -170,8 +164,7 @@ const createFields = [
 						placeholder: 'structure-id',
 					},
 				],
-				description:
-					'Choose from the structure list using search, or specify an ID directly',
+				description: 'Choose from the structure list using search, or specify an ID directly',
 			},
 			{
 				name: 'listId',
@@ -409,7 +402,7 @@ const createFields = [
 						type: 'boolean' as const,
 						default: true,
 						description:
-							'Whether to set the newly created structure as the contact\'s main structure. If disabled, it will be linked as a secondary structure.',
+							"Whether to set the newly created structure as the contact's main structure. If disabled, it will be linked as a secondary structure.",
 					},
 					{
 						displayName: 'SIRET',
@@ -546,8 +539,7 @@ const updateFields = [
 								placeholder: 'structure-id',
 							},
 						],
-						description:
-							'Choose from the structure list using search, or specify an ID directly',
+						description: 'Choose from the structure list using search, or specify an ID directly',
 					},
 					{
 						displayName: 'Set as Main Structure',
@@ -555,7 +547,7 @@ const updateFields = [
 						type: 'boolean' as const,
 						default: true,
 						description:
-							'Whether to set this structure as the contact\'s main structure. If disabled, the structure is only added as a secondary link.',
+							"Whether to set this structure as the contact's main structure. If disabled, the structure is only added as a secondary link.",
 					},
 				],
 			},
@@ -715,7 +707,7 @@ const linkToStructureFields = [
 			},
 		},
 		description:
-			'Whether to set this structure as the contact\'s main structure. If disabled, the structure is only added as a secondary link.',
+			"Whether to set this structure as the contact's main structure. If disabled, the structure is only added as a secondary link.",
 	},
 ];
 

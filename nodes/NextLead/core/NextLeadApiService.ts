@@ -14,7 +14,7 @@ export class NextLeadApiService {
 		context: IExecuteFunctions | IPollFunctions,
 		config: RequestConfig,
 	): Promise<NextLeadApiResponse> {
-		const { method, endpoint, data, queryParams } = config;
+		const { method, endpoint, data, queryParams, timeout } = config;
 
 		try {
 			const domain = this.credentials.domain.endsWith('/')
@@ -41,6 +41,10 @@ export class NextLeadApiService {
 
 			if (queryParams) {
 				requestOptions.qs = queryParams;
+			}
+
+			if (timeout) {
+				requestOptions.timeout = timeout;
 			}
 
 			const response = await context.helpers.requestWithAuthentication.call(
@@ -77,6 +81,7 @@ export class NextLeadApiService {
 				success: false,
 				error: nextLeadError.message,
 				data: null,
+				httpError: error,
 			};
 		}
 	}
@@ -85,6 +90,23 @@ export class NextLeadApiService {
 		return this.makeRequest(context, {
 			method: 'GET',
 			endpoint: '/api/v2/identify-user',
+		});
+	}
+
+	/**
+	 * Runs a natural language prompt through the NextLead AI agent and returns the
+	 * answer synchronously. The agent loop can run up to 5 minutes server-side, so
+	 * the request timeout is raised accordingly.
+	 */
+	async runAiPrompt(
+		context: IExecuteFunctions,
+		runData: IDataObject,
+	): Promise<NextLeadApiResponse> {
+		return this.makeRequest(context, {
+			method: 'POST',
+			endpoint: '/api/v2/ai/run',
+			data: runData,
+			timeout: 300000,
 		});
 	}
 
@@ -291,13 +313,18 @@ export class NextLeadApiService {
 		});
 	}
 
+	/**
+	 * The route is plural — `create-groups`. The singular form used previously
+	 * does not exist server-side and answered 404, so group creation never worked.
+	 * Do not "fix" this back to the singular.
+	 */
 	async createGroup(
 		context: IExecuteFunctions,
 		groupData: IDataObject,
 	): Promise<NextLeadApiResponse> {
 		return this.makeRequest(context, {
 			method: 'POST',
-			endpoint: '/api/v2/receive/groups/create-group',
+			endpoint: '/api/v2/receive/groups/create-groups',
 			data: groupData,
 		});
 	}

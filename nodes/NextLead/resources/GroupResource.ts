@@ -56,6 +56,6 @@ export class GroupResource implements IResourceStrategy {
 
 		const response = await apiService.createGroup(context, groupData);
 
-		return ResponseUtils.formatSingleResponse(response);
+		return ResponseUtils.formatSingleResponse(context, response);
 	}
 }
