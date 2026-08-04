@@ -313,13 +313,18 @@ export class NextLeadApiService {
 		});
 	}
 
+	/**
+	 * The route is plural — `create-groups`. The singular form used previously
+	 * does not exist server-side and answered 404, so group creation never worked.
+	 * Do not "fix" this back to the singular.
+	 */
 	async createGroup(
 		context: IExecuteFunctions,
 		groupData: IDataObject,
 	): Promise<NextLeadApiResponse> {
 		return this.makeRequest(context, {
 			method: 'POST',
-			endpoint: '/api/v2/receive/groups/create-group',
+			endpoint: '/api/v2/receive/groups/create-groups',
 			data: groupData,
 		});
 	}

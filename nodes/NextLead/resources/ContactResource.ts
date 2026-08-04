@@ -229,12 +229,24 @@ export class ContactResource implements IResourceStrategy {
 
 		if (!email && !linkedin) throw new Error('Either email or LinkedIn URL must be provided');
 
-		await apiService.deleteContact(context, {
+		// The response has to be inspected: discarding it reported a success even
+		// when the contact did not exist or the API rejected the call.
+		const response = await apiService.deleteContact(context, {
 			...(email && { email }),
 			...(linkedin && { linkedin }),
 		});
 
-		return ResponseUtils.formatSuccessResponse(`Contact deleted successfully`);
+		if (!response.success) {
+			// Raises a NodeApiError carrying the API explanation.
+			return ResponseUtils.formatSingleResponse(context, response);
+		}
+
+		// Keep the historical `{ success, message }` output when the API returns no
+		// payload, so downstream nodes reading `$json.success` keep working.
+		const data = response.data as IDataObject | undefined;
+		return data && Object.keys(data).length > 0
+			? [{ json: data }]
+			: ResponseUtils.formatSuccessResponse('Contact deleted successfully');
 	}
 
 	private async handleFind(

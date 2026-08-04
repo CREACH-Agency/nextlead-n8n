@@ -4,19 +4,22 @@ import { createNextLeadError } from './types/n8n/ErrorTypes';
 const STATUS_DESCRIPTIONS: Record<number, { message: string; description: string }> = {
 	401: {
 		message: 'Authentication failed. Please check your NextLead API credentials.',
-		description: 'The API key might be invalid or expired.',
+		description:
+			'The API key may be invalid or expired, or it may no longer resolve to an organization.',
 	},
 	403: {
-		message: 'API Error: Forbidden - perhaps check your credentials?',
-		description: 'Please check your input data and try again.',
+		message: 'NextLead refused this request.',
+		description:
+			'This can be a plan limit reached, a missing permission, or an invalid key. The NextLead message above states which.',
 	},
 	404: {
 		message: 'Organization not found. Please check your domain configuration.',
 		description: 'The organization associated with your API key was not found.',
 	},
 	429: {
-		message: 'Rate limit exceeded. Please try again later.',
-		description: 'Too many requests have been made to the API.',
+		message: 'NextLead API quota exceeded.',
+		description:
+			'The organization monthly external automation quota is spent, or requests are coming in too fast.',
 	},
 };
 
@@ -53,9 +56,17 @@ export class NextLeadErrorHandler {
 
 		const known = STATUS_DESCRIPTIONS[statusCode];
 		if (known) {
+			const retryHint = nextLeadError.retryAfter
+				? ` Retry after ${nextLeadError.retryAfter}s.`
+				: '';
+
 			return new NodeApiError(node, errorResponse, {
-				message: known.message,
-				description: known.description,
+				// The API explains plan limits, quota exhaustion and validation
+				// failures in the response body. The canned text would send the user
+				// to check credentials that are perfectly valid, so it is only a
+				// fallback for when the body carries no explanation.
+				message: nextLeadError.fromApiBody ? nextLeadError.message : known.message,
+				description: `${known.description}${retryHint}`,
 				httpCode: String(statusCode),
 			});
 		}

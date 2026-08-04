@@ -1,6 +1,6 @@
 import { ILoadOptionsFunctions, NodeOperationError } from 'n8n-workflow';
 
-import { NextLeadCredentials } from '../core/types/n8n/RequestTypes';
+import { fetchMetadata, unwrapArray } from './MetadataCache';
 
 export interface ITeamMember {
 	id: string;
@@ -14,27 +14,6 @@ interface IRawTeamMember {
 	firstName?: string;
 	lastName?: string;
 	email?: string;
-}
-
-/**
- * The API may answer with a bare array or wrap it in a container key depending
- * on the endpoint version, so unwrap the usual shapes before mapping.
- */
-function unwrapMembers(response: unknown): IRawTeamMember[] {
-	if (Array.isArray(response)) {
-		return response as IRawTeamMember[];
-	}
-
-	if (response && typeof response === 'object') {
-		const container = response as Record<string, unknown>;
-		for (const key of ['data', 'users', 'team', 'members', 'result']) {
-			if (Array.isArray(container[key])) {
-				return container[key] as IRawTeamMember[];
-			}
-		}
-	}
-
-	return [];
 }
 
 function buildLabel(member: IRawTeamMember): string {
@@ -51,16 +30,7 @@ export async function fetchTeamMembers(context: ILoadOptionsFunctions): Promise<
 	let response: unknown;
 
 	try {
-		const credentials = (await context.getCredentials('nextLeadApi')) as NextLeadCredentials;
-		const domain = credentials.domain.endsWith('/')
-			? credentials.domain.slice(0, -1)
-			: credentials.domain;
-
-		response = await context.helpers.httpRequestWithAuthentication.call(context, 'nextLeadApi', {
-			method: 'GET' as const,
-			url: `${domain}/api/v2/receive/contact/get-team`,
-			json: true,
-		});
+		response = await fetchMetadata(context, '/api/v2/receive/contact/get-team');
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
 		throw new NodeOperationError(
@@ -73,7 +43,7 @@ export async function fetchTeamMembers(context: ILoadOptionsFunctions): Promise<
 		);
 	}
 
-	const members = unwrapMembers(response)
+	const members = unwrapArray<IRawTeamMember>(response, ['users', 'team', 'members'])
 		.map((member) => ({ id: member.id ?? member.userId ?? '', label: buildLabel(member) }))
 		.filter((member) => member.id !== '');
 
