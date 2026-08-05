@@ -277,10 +277,21 @@ export class NextLead implements INodeType {
 
 				const result = await NextLead.resourceManager.execute(resource, operation, this, itemIndex);
 
-				results.push(...result);
+				// Item linking: every output item states which input item produced it,
+				// so downstream nodes can trace a record back to its source.
+				// https://docs.n8n.io/integrations/creating-nodes/build/reference/paired-items/
+				results.push(
+					...result.map((item) => ({
+						...item,
+						pairedItem: item.pairedItem ?? { item: itemIndex },
+					})),
+				);
 			} catch (error) {
 				if (this.continueOnFail()) {
-					results.push({ json: NextLeadErrorHandler.formatErrorData(error) });
+					results.push({
+						json: NextLeadErrorHandler.formatErrorData(error),
+						pairedItem: { item: itemIndex },
+					});
 				} else {
 					throw NextLeadErrorHandler.handleApiError(error, this.getNode());
 				}

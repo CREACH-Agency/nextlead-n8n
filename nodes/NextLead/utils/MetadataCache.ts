@@ -1,6 +1,12 @@
 import { createHash } from 'crypto';
-import { IDataObject, ILoadOptionsFunctions } from 'n8n-workflow';
+import {
+	IDataObject,
+	ILoadOptionsFunctions,
+	NodeApiError,
+	NodeOperationError,
+} from 'n8n-workflow';
 
+import { NextLeadErrorHandler } from '../core/NextLeadErrorHandler';
 import { NextLeadCredentials } from '../core/types/n8n/RequestTypes';
 
 /**
@@ -78,7 +84,19 @@ export async function fetchMetadata<T = unknown>(
 		return (await request) as T;
 	} catch (error) {
 		cache.delete(key);
-		throw error;
+
+		// A raw rejection must never leave the node: n8n needs a NodeApiError (or a
+		// NodeOperationError when the failure carries no HTTP status) to render the
+		// status code, the response body and a readable message in the UI.
+		// `handleApiError` builds exactly one of those and already maps 401/403/404/429
+		// to their explanation — metadata routes are billed against the organization
+		// quota, so a 429 has to read as "quota spent", not as an opaque rejection.
+		// https://docs.n8n.io/integrations/creating-nodes/build/reference/verification-guidelines/
+		const nodeError: NodeApiError | NodeOperationError = NextLeadErrorHandler.handleApiError(
+			error,
+			context.getNode(),
+		);
+		throw nodeError;
 	}
 }
 
