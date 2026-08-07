@@ -113,6 +113,34 @@ export class ContactHelpers {
 	}
 
 	/**
+	 * Reads the structure selected through the `linkStructure` picker that the
+	 * update operation exposed before Find Structure replaced it.
+	 *
+	 * The raw node parameters are read rather than `getNodeParameter`, because a
+	 * parameter absent from the node description is filtered out when n8n
+	 * reconciles the saved workflow against it — the value survives only in the
+	 * untouched parameter object. An expression is skipped: it is stored
+	 * unresolved here, and sending `={{...}}` as an ID would be worse than
+	 * ignoring it.
+	 */
+	static readLegacyLinkStructure(nodeParameters: IDataObject): {
+		structureId: string;
+		setAsMainStructure: boolean;
+	} {
+		const wrapper = nodeParameters?.linkStructure as IDataObject | undefined;
+		const structure = wrapper?.structure as IDataObject | undefined;
+
+		if (!structure) return { structureId: '', setAsMainStructure: true };
+
+		const structureId = this.extractStructureIdFromLocator(structure.structureId);
+
+		return {
+			structureId: structureId.startsWith('=') ? '' : structureId,
+			setAsMainStructure: structure.setAsMainStructure !== false,
+		};
+	}
+
+	/**
 	 * Digs the structure ID out of an API answer. The structure routes wrap their
 	 * payload inconsistently (`{ id }`, `{ data: { id } }`, `{ structure: { id } }`,
 	 * or a one-element array), so every shape is probed before giving up.

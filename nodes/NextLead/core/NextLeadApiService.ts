@@ -21,13 +21,9 @@ export class NextLeadApiService {
 				? this.credentials.domain.slice(0, -1)
 				: this.credentials.domain;
 
-			// Debug log
-			context.logger.info('NextLead API Request:', {
-				method,
-				endpoint,
-				data,
-				hasApiKey: !!this.credentials.apiKey,
-			});
+			// The payload is deliberately left out: it carries contact data, and the
+			// execution log is not the place for personal information.
+			context.logger.debug('NextLead API request', { method, endpoint });
 
 			const requestOptions: N8nRequestOptions = {
 				method,
@@ -64,21 +60,14 @@ export class NextLeadApiService {
 		} catch (error: unknown) {
 			const nextLeadError = createNextLeadError(error);
 
+			// A 403 is almost always a scope or quota problem on the API key, so the
+			// endpoint and the server's own explanation are worth keeping. The raw
+			// error is not logged: it echoes back the request, credentials included.
 			if (nextLeadError.statusCode === 403) {
-				context.logger.error('403 Forbidden Error Details:', {
+				context.logger.debug('NextLead API returned 403', {
 					endpoint,
-					statusCode: nextLeadError.statusCode,
 					message: nextLeadError.message,
-					details: nextLeadError.details,
-					rawError: error,
 				});
-
-				if (error && typeof error === 'object' && 'response' in error) {
-					const errorResponse = error as { response?: { body?: unknown } };
-					context.logger.error('Raw error response body:', {
-						body: errorResponse.response?.body,
-					});
-				}
 			}
 
 			return {

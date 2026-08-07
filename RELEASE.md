@@ -1,22 +1,22 @@
-# Guide de release — n8n-nodes-nextlead
+# Release guide — n8n-nodes-nextlead
 
-Procédure complète pour publier une nouvelle version du node sur npm.
+Full procedure to publish a new version of the node on npm.
 
-La publication se fait **exclusivement via GitHub Actions**. Depuis le 1er mai 2026, n8n
-exige que les community nodes vérifiés soient publiés avec une *provenance statement* npm,
-qui prouve cryptographiquement que le package a été construit depuis ce dépôt, à ce commit.
-Un `npm publish` depuis ta machine ne produit pas cette preuve et disqualifie le node.
+Publishing happens **exclusively through GitHub Actions**. Since 1 May 2026, n8n requires
+verified community nodes to be published with an npm *provenance statement*, which
+cryptographically proves the package was built from this repository, at this commit. An
+`npm publish` from your own machine does not produce that proof and disqualifies the node.
 
-**Le principe :** tu ne publies jamais à la main. Tu pousses un tag de version, et le
-workflow [`.github/workflows/publish.yml`](.github/workflows/publish.yml) publie pour toi.
+**The principle:** you never publish by hand. You push a version tag, and the
+[`.github/workflows/publish.yml`](.github/workflows/publish.yml) workflow publishes for you.
 
 ---
 
-## ⚠️ Étape 0 — Vérifier le token npm (à faire AVANT chaque release)
+## ⚠️ Step 0 — Check the npm token (do this BEFORE every release)
 
-**C'est la panne la plus fréquente.** npm plafonne les tokens en écriture à **90 jours
-maximum**, et 7 jours par défaut. Un token expiré ne produit pas un message d'erreur clair :
-la publication échoue avec un `E404` trompeur.
+**This is the most frequent failure.** npm caps write tokens at **90 days maximum**, and
+7 days by default. An expired token does not produce a clear error message: publishing fails
+with a misleading `E404`.
 
 ```
 npm error code E404
@@ -25,243 +25,243 @@ npm error 404 The requested resource 'n8n-nodes-nextlead@X.Y.Z' could not be fou
        or you do not have permission to access it.
 ```
 
-Le registre renvoie `404` au lieu de `403` pour ne pas révéler l'existence des packages aux
-non-autorisés. **Un `E404` sur un `PUT` d'un package qui existe = problème d'authentification,
-jamais un package introuvable.**
+The registry answers `404` instead of `403` so that it does not reveal the existence of
+packages to unauthorized users. **An `E404` on a `PUT` for a package that does exist is an
+authentication problem, never a missing package.**
 
-### Vérifier
+### Check it
 
 1. npmjs.com → avatar → **Access Tokens**
-2. Repérer le token `nextlead-n8n-publish` et sa date d'expiration.
-3. S'il est expiré ou absent → le régénérer (ci-dessous).
+2. Find the `nextlead-n8n-publish` token and its expiry date.
+3. If it is expired or missing → regenerate it (below).
 
-### Régénérer le token
+### Regenerate the token
 
 npmjs.com → **Access Tokens** → *Generate New Token* → **Granular Access Token**
 
-| Champ | Valeur |
+| Field | Value |
 |---|---|
 | Token name | `nextlead-n8n-publish` |
-| **Bypass two-factor authentication (2FA)** | ✅ **coché** — sinon `npm publish` échoue avec `EOTP` en CI, personne ne peut saisir un code sur un runner |
-| Allowed IP ranges | **vide** — les runners GitHub ont des IP dynamiques |
+| **Bypass two-factor authentication (2FA)** | ✅ **checked** — otherwise `npm publish` fails with `EOTP` in CI, since nobody can type a code on a runner |
+| Allowed IP ranges | **empty** — GitHub runners have dynamic IPs |
 | Packages and scopes | *Only select packages and scopes* → **`n8n-nodes-nextlead`** |
 | Permissions (packages) | **Read and write** |
-| Organizations | **No access** — le package appartient à des comptes utilisateurs, pas à une org |
-| Expiration | **90 days** (le maximum) |
+| Organizations | **No access** — the package belongs to user accounts, not to an org |
+| Expiration | **90 days** (the maximum) |
 
-Avant de valider, le résumé doit afficher **« read and write access to 1 package »**.
-S'il affiche `0 packages`, le package n'a pas été sélectionné et le token sera inutile.
+Before confirming, the summary must read **"read and write access to 1 package"**. If it
+reads `0 packages`, the package was not selected and the token will be useless.
 
-Puis : GitHub → repo → **Settings → Secrets and variables → Actions** → `NPM_TOKEN` →
+Then: GitHub → repo → **Settings → Secrets and variables → Actions** → `NPM_TOKEN` →
 **Update secret**.
 
-> **Note d'échéance :** npm restreint les tokens qui contournent la 2FA pour la publication
-> directe à partir de **janvier 2027**. Il faudra basculer sur le *Trusted Publishing* OIDC
-> d'ici là (voir « Évolutions à prévoir » en bas).
+> **Deadline note:** npm will restrict tokens that bypass 2FA for direct publishing from
+> **January 2027**. We will need to move to OIDC *Trusted Publishing* before then (see
+> "Planned changes" at the bottom).
 
 ---
 
-## Étape 1 — Développer et tester
+## Step 1 — Develop and test
 
 ```bash
 pnpm dev
 ```
 
-Lance une instance n8n sur http://localhost:5678 avec le node lié et rechargé à chaud.
-Teste réellement les opérations modifiées dans l'éditeur : ni le linter ni le compilateur ne
-valident le comportement runtime (appels API, formats de dates, chargement des dropdowns).
+Starts an n8n instance on http://localhost:5678 with the node linked and hot-reloaded. Really
+test the operations you changed in the editor: neither the linter nor the compiler validates
+runtime behaviour (API calls, date formats, dropdown loading).
 
-## Étape 2 — Contrôles avant release
+## Step 2 — Pre-release checks
 
 ```bash
-pnpm lint     # règles de vérification n8n (mode strict)
-pnpm build    # compilation TypeScript + copie des assets
+pnpm lint     # n8n verification rules (strict mode)
+pnpm build    # TypeScript compilation + asset copy
 ```
 
-Les deux doivent sortir en code 0. Le linter applique les règles `eslint-plugin-n8n-nodes-base`
-exigées pour la vérification n8n : nommage des paramètres, `default` obligatoire, suffixe
-« Name or ID » sur les champs à `loadOptionsMethod`, descriptions, etc.
+Both must exit with code 0. The linter applies the `eslint-plugin-n8n-nodes-base` rules
+required for n8n verification: parameter naming, mandatory `default`, the "Name or ID" suffix
+on fields using `loadOptionsMethod`, descriptions, and so on.
 
-Optionnel, pour inspecter le contenu exact du tarball publié :
+Optional, to inspect the exact contents of the published tarball:
 
 ```bash
 npm pack --dry-run
 ```
 
-Seul le dossier `dist/` est publié (champ `files` de `package.json`).
+Only the `dist/` folder is published (the `files` field of `package.json`).
 
-## Étape 3 — Fusionner dans `main`
+## Step 3 — Merge into `main`
 
-Le tag de release doit pointer sur `main`. `n8n-node release` refuse de tourner ailleurs
+The release tag must point at `main`. `n8n-node release` refuses to run anywhere else
 (`--git.requireBranch main`).
 
 ```bash
-git push -u origin ma-branche
-# ouvrir la PR, la faire relire, merger
+git push -u origin my-branch
+# open the PR, get it reviewed, merge it
 
 git checkout main
 git pull
-git status        # doit être vide : --git.requireCleanWorkingDir
+git status        # must be empty: --git.requireCleanWorkingDir
 ```
 
-## Étape 4 — Lancer la release
+## Step 4 — Run the release
 
 ```bash
 pnpm run release
 ```
 
-Ce que la commande enchaîne :
+What the command chains together:
 
-1. `pnpm lint` puis `pnpm build`
-2. génération du changelog (`auto-changelog`)
-3. **prompt du numéro de version** :
+1. `pnpm lint` then `pnpm build`
+2. changelog generation (`auto-changelog`)
+3. **version number prompt**:
    ```
    ? Select increment (next version):
-   ❯ patch (0.1.8)     ← corrections de bugs
-     minor (0.2.0)     ← nouvelles fonctionnalités rétrocompatibles
+   ❯ patch (0.1.8)     ← bug fixes
+     minor (0.2.0)     ← backwards-compatible features
      major (1.0.0)     ← breaking changes
    ```
-4. écriture de la version dans `package.json`, commit `Release X.Y.Z`
-5. tag `vX.Y.Z`, push du commit et du tag
-6. création de la GitHub Release
+4. writes the version into `package.json`, commits `Release X.Y.Z`
+5. tags `vX.Y.Z`, pushes the commit and the tag
+6. creates the GitHub Release
 
-**Elle ne publie pas sur npm** — c'est volontaire, une publication locale n'aurait pas de
-provenance. C'est le push du tag qui déclenche le workflow.
+**It does not publish to npm** — that is deliberate, a local publish would carry no
+provenance. Pushing the tag is what triggers the workflow.
 
-Pense à committer le `CHANGELOG.md` généré s'il apparaît en non suivi.
+Remember to commit the generated `CHANGELOG.md` if it shows up as untracked.
 
-## Étape 5 — Surveiller le workflow
+## Step 5 — Watch the workflow
 
-GitHub → onglet **Actions** → le run porte le nom du commit de release.
+GitHub → **Actions** tab → the run is named after the release commit.
 
-Le workflow (déclenché par les tags `*.*.*`) : checkout → pnpm → Node LTS →
+The workflow (triggered by `*.*.*` tags): checkout → pnpm → Node LTS →
 `pnpm install --frozen-lockfile` → `pnpm run build` → `npm publish --provenance`.
 
-## Étape 6 — Vérifier la publication
+## Step 6 — Verify the publication
 
 ```bash
-npm view n8n-nodes-nextlead version     # doit afficher la nouvelle version
+npm view n8n-nodes-nextlead version     # must show the new version
 ```
 
-Sur https://www.npmjs.com/package/n8n-nodes-nextlead, la mention
-**« Built and signed on GitHub Actions »** doit apparaître : c'est la provenance exigée par n8n.
+On https://www.npmjs.com/package/n8n-nodes-nextlead, the
+**"Built and signed on GitHub Actions"** badge must appear: that is the provenance n8n
+requires.
 
 ---
 
-## Résolution des pannes
+## Troubleshooting
 
-### `ERR_PNPM_IGNORED_BUILDS` à l'étape *Install dependencies*
+### `ERR_PNPM_IGNORED_BUILDS` at the *Install dependencies* step
 
 ```
 [ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: <package>@x.y.z
 ```
 
-Depuis pnpm 11, un build script non approuvé est une **erreur fatale** (c'était un simple
-warning en pnpm 10). Le workflow utilise `version: latest` pour pnpm, il peut donc tourner sur
-une version plus récente que la tienne en local — l'erreur est alors invisible côté développeur.
+Since pnpm 11, an unapproved build script is a **fatal error** (it was only a warning in
+pnpm 10). The workflow uses `version: latest` for pnpm, so it may run a newer version than the
+one you have locally — the error is then invisible on the developer side.
 
-Correctif : ajouter la dépendance dans [`pnpm-workspace.yaml`](pnpm-workspace.yaml), qui déclare
-les deux clés (`allowBuilds` pour pnpm 11, `onlyBuiltDependencies` pour pnpm 10). Le champ `pnpm`
-de `package.json` n'est **plus lu** par pnpm 11.
+Fix: add the dependency to [`pnpm-workspace.yaml`](pnpm-workspace.yaml), which declares both
+keys (`allowBuilds` for pnpm 11, `onlyBuiltDependencies` for pnpm 10). The `pnpm` field of
+`package.json` is **no longer read** by pnpm 11.
 
-Reproduire l'environnement CI en local :
+Reproduce the CI environment locally:
 
 ```bash
 CI=true npx pnpm@latest install --frozen-lockfile
 ```
 
-### `E404` sur `PUT` à l'étape *Publish to npm*
+### `E404` on `PUT` at the *Publish to npm* step
 
-Token npm expiré, révoqué, ou sans droit d'écriture sur le package → voir l'**Étape 0**.
+npm token expired, revoked, or without write access to the package → see **Step 0**.
 
 ### `ERR_PNPM_OUTDATED_LOCKFILE`
 
-`pnpm-lock.yaml` n'est pas synchro avec `package.json`. Lance `pnpm install` et committe le
+`pnpm-lock.yaml` is out of sync with `package.json`. Run `pnpm install` and commit the
 lockfile.
 
-### `ERROR Unknown option '-n'` au lancement de `pnpm run release`
+### `ERROR Unknown option '-n'` when running `pnpm run release`
 
-`release-it` v21 a supprimé le flag `-n` que `@n8n/node-cli` passe encore. Le paquet est
-épinglé en `^20.2.0` dans les devDependencies — ne pas le monter en v21.
+`release-it` v21 removed the `-n` flag that `@n8n/node-cli` still passes. The package is
+pinned to `^20.2.0` in devDependencies — do not bump it to v21.
 
-### `spawn ENAMETOOLONG` en fin de release (Windows)
+### `spawn ENAMETOOLONG` at the end of the release (Windows)
 
-Sans variable d'environnement `GITHUB_TOKEN`, release-it bascule sur la création de Release
-« web » et tente d'ouvrir une URL contenant tout le changelog — trop longue pour Windows.
+Without a `GITHUB_TOKEN` environment variable, release-it falls back to creating the Release
+through the web and tries to open a URL containing the whole changelog — too long for Windows.
 
-Le commit, le tag et le push sont déjà passés à ce stade : **la release n'est pas perdue**,
-seule la GitHub Release n'est pas créée. Corriger avec `setx GH_TOKEN <token>`, ou créer la
-Release à la main.
+The commit, the tag and the push have already gone through at that point: **the release is not
+lost**, only the GitHub Release is missing. Fix it with `setx GH_TOKEN <token>`, or create the
+Release by hand.
 
-### Le run a échoué, je veux le relancer
+### The run failed and I want to re-run it
 
-**Un « Re-run jobs » ne reprend pas le dernier état de `main`.** Il rejoue exactement le commit
-qui avait déclenché le run. Si le correctif est dans un commit postérieur, il faut déplacer le
-tag :
+**"Re-run jobs" does not pick up the latest state of `main`.** It replays exactly the commit
+that triggered the run. If the fix is in a later commit, the tag has to be moved:
 
 ```bash
 git tag -f vX.Y.Z
-git push origin :refs/tags/vX.Y.Z    # supprimer le tag distant
-git push origin vX.Y.Z               # le repousser → nouveau run
+git push origin :refs/tags/vX.Y.Z    # delete the remote tag
+git push origin vX.Y.Z               # push it again → new run
 ```
 
-Ne supprime pas un run que tu comptes relancer : un run supprimé n'est plus rejouable.
+Do not delete a run you intend to re-run: a deleted run cannot be replayed.
 
-### La version a été taguée mais jamais publiée
+### The version was tagged but never published
 
-Tant que la version n'existe pas sur npm, le numéro reste réutilisable : corrige, puis déplace
-le tag comme ci-dessus. Si la version **a** été publiée, elle est définitive — npm interdit de
-republier un même numéro, il faut repartir sur un `patch`.
+As long as the version does not exist on npm, the number stays reusable: fix the problem, then
+move the tag as above. If the version **was** published, it is final — npm forbids republishing
+the same number, so you have to move on to a `patch`.
 
 ---
 
-## Règles de versioning
+## Versioning rules
 
-Le node suit le semver. `n8n-nodes-nextlead` étant en `0.x`, les breaking changes restent
-tolérés sur un `minor`, mais autant rester rigoureux :
+The node follows semver. Since `n8n-nodes-nextlead` is on `0.x`, breaking changes are still
+tolerated in a `minor`, but it is worth staying strict:
 
-| Incrément | Quand |
+| Increment | When |
 |---|---|
-| `patch` | correction de bug, ajustement de description, correctif CI |
-| `minor` | nouvelle ressource, nouvelle opération, nouveau champ |
-| `major` | suppression ou renommage d'un champ/opération, changement de format de sortie — casse les workflows existants des utilisateurs |
+| `patch` | bug fix, description tweak, CI fix |
+| `minor` | new resource, new operation, new field |
+| `major` | removing or renaming a field/operation, changing the output format — breaks existing user workflows |
 
-Attention particulière au `major` : renommer le `name` d'un paramètre casse silencieusement les
-workflows déjà construits par les utilisateurs.
-
----
-
-## Contraintes à respecter (vérification n8n)
-
-Elles sont validées automatiquement par `pnpm lint`, mais restent utiles à connaître :
-
-- nom du package préfixé `n8n-nodes-`
-- keyword `n8n-community-node-package` présent
-- **zéro dépendance runtime** — seul `n8n-workflow` en peerDependency ; tout ce qui est ajouté
-  doit l'être en `devDependencies`
-- licence MIT
-- nodes et credentials déclarés dans l'attribut `n8n` de `package.json`
-- publication via GitHub Actions avec provenance
+Pay particular attention to `major`: renaming a parameter's `name` silently breaks workflows
+users have already built.
 
 ---
 
-## Évolutions à prévoir
+## Constraints to respect (n8n verification)
 
-**Trusted Publishing (OIDC)** — supprime totalement le token npm et donc les expirations à
-répétition. C'est la méthode recommandée par n8n. Nécessite : déclarer le publisher sur
+They are checked automatically by `pnpm lint`, but are worth knowing:
+
+- package name prefixed with `n8n-nodes-`
+- `n8n-community-node-package` keyword present
+- **zero runtime dependencies** — only `n8n-workflow` as a peerDependency; anything added must
+  go in `devDependencies`
+- MIT licence
+- nodes and credentials declared in the `n8n` attribute of `package.json`
+- published through GitHub Actions with provenance
+
+---
+
+## Planned changes
+
+**Trusted Publishing (OIDC)** — removes the npm token entirely, and with it the repeated
+expirations. This is the method n8n recommends. It requires: declaring the publisher on
 npmjs.com (package settings → Trusted Publishers → repo `CREACH-Agency/nextlead-n8n`, workflow
-`publish.yml`), ajouter `registry-url` à `setup-node`, et supprimer la ligne
-`[ -n "$NPM_TOKEN" ] && ...` du workflow — sous `bash -e`, elle fait échouer l'étape quand le
-secret est vide, ce qui est précisément le cas en mode OIDC.
+`publish.yml`), adding `registry-url` to `setup-node`, and removing the
+`[ -n "$NPM_TOKEN" ] && ...` line from the workflow — under `bash -e` it fails the step when
+the secret is empty, which is exactly the case in OIDC mode.
 
-**Actions Node 20 dépréciées** — passer `actions/checkout` et `actions/setup-node` en `@v5`
-pour éteindre le warning.
+**Deprecated Node 20 actions** — move `actions/checkout` and `actions/setup-node` to `@v5` to
+silence the warning.
 
 ---
 
-## Références
+## References
 
 - [Community nodes — n8n docs](https://docs.n8n.io/integrations/community-nodes/)
 - [@n8n/node-cli](https://www.npmjs.com/package/@n8n/node-cli)
 - [npm provenance](https://docs.npmjs.com/generating-provenance-statements)
-- [Package sur npm](https://www.npmjs.com/package/n8n-nodes-nextlead)
+- [Package on npm](https://www.npmjs.com/package/n8n-nodes-nextlead)

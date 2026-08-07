@@ -11,7 +11,5 @@ credentials/
 .editorconfig
 tsconfig.json
 gulpfile.js
-CHECKLIST_PUBLICATION.md
-PUBLICATION_GUIDE.md
-PUBLICATION_CLIENT.md
+RELEASE.md
 pnpm-lock.yaml

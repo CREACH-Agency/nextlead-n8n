@@ -69,14 +69,15 @@ export class ContactResource implements IResourceStrategy {
 	): Promise<string> {
 		if (Object.keys(criteria).length === 0) return '';
 
-		context.logger.info('Looking up structure with criteria:', criteria);
+		// Only the criteria names are logged; their values identify a real company.
+		context.logger.debug('Looking up structure', { criteria: Object.keys(criteria) });
 		const response = await apiService.findSingleStructure(context, criteria);
 
 		if (!response.success) {
 			const { statusCode } = createNextLeadError(response.httpError);
 
 			if (statusCode === 404) {
-				context.logger.info('No structure matched the Find Structure criteria');
+				context.logger.debug('No structure matched the Find Structure criteria');
 				return '';
 			}
 
@@ -156,33 +157,50 @@ export class ContactResource implements IResourceStrategy {
 			setAsMainStructure?: boolean;
 		} & IDataObject;
 		const structureData = ContactHelpers.cleanFields(structurePayload);
-		const shouldSetAsMain = setAsMainStructure !== false;
+
+		const findStructureInput = context.getNodeParameter(
+			'findStructure',
+			itemIndex,
+			{},
+		) as IDataObject;
+		const findCriteria = ContactHelpers.buildStructureFindQuery(findStructureInput);
+		const pickedStructureId = ContactHelpers.extractStructureIdFromLocator(
+			organizationFields.establishmentId,
+		);
+		// Creating a structure needs at least one of the fields NextLead identifies
+		// it by; anything else would produce an anonymous record.
+		const createRequested = Boolean(
+			structureData.name || structureData.siret || structureData.email,
+		);
+
+		// Whether a structure step was asked for is read from the configuration
+		// alone, before any call is made. The output shape follows this flag, so it
+		// never depends on whether the lookup happened to match.
+		const structureRequested =
+			Boolean(pickedStructureId) || Object.keys(findCriteria).length > 0 || createRequested;
 
 		// Structure resolution follows the Zapier order — explicit ID, then lookup,
 		// then creation — and happens *before* the contact so the link can be part
 		// of the create payload instead of a follow-up call.
-		let structureId = ContactHelpers.extractStructureIdFromLocator(
-			organizationFields.establishmentId,
-		);
+		let structureId = pickedStructureId;
 
-		if (!structureId) {
-			structureId = await this.findStructureId(
-				context,
-				apiService,
-				ContactHelpers.buildStructureFindQuery(
-					context.getNodeParameter('findStructure', itemIndex, {}) as IDataObject,
-				),
-			);
+		if (!structureId && Object.keys(findCriteria).length > 0) {
+			structureId = await this.findStructureId(context, apiService, findCriteria);
 		}
 
-		// Creating a structure needs at least one of the fields NextLead identifies
-		// it by; anything else would produce an anonymous record.
-		const canCreateStructure =
-			!structureId && Boolean(structureData.name || structureData.siret || structureData.email);
+		// Which toggle applies depends on how the structure was obtained: an
+		// existing one carries the toggle sitting next to the lookup criteria, a
+		// structure created here keeps the one next to its own fields. Reading a
+		// single toggle for both had the creation group silently govern a structure
+		// picked in Organization Settings.
+		const shouldSetAsMain = structureId
+			? findStructureInput.setAsMainStructure !== false
+			: setAsMainStructure !== false;
+
 		let structureResponse: NextLeadApiResponse | null = null;
 
-		if (canCreateStructure) {
-			context.logger.info('Creating structure with data:', structureData);
+		if (!structureId && createRequested) {
+			context.logger.debug('Creating structure');
 			structureResponse = await apiService.createStructure(context, structureData);
 
 			if (structureResponse.success) {
@@ -194,26 +212,32 @@ export class ContactResource implements IResourceStrategy {
 		// follow-up `link-to-contact` call with `mainStructure: false`.
 		if (structureId && shouldSetAsMain) {
 			contactData.structureId = structureId;
+		} else if (!shouldSetAsMain) {
+			// The picker writes its selection into `organizationFields`, which is
+			// spread into the payload above. Left in place it would link the
+			// structure as main and contradict the follow-up call.
+			delete contactData.establishmentId;
 		}
 
 		const preferredLanguage = (contactFields.preferredLanguage as string) || '';
 
-		context.logger.info('Creating contact with data:', contactData);
+		context.logger.debug('Creating contact', { linkedStructure: Boolean(structureId) });
 		const contactResponse = await apiService.createContact(
 			context,
 			contactData,
 			preferredLanguage ? { 'X-PREFERRED-LANGUAGE': preferredLanguage } : undefined,
 		);
 
-		// A structure that must stay secondary still needs the follow-up link call,
-		// even when it was not created here.
-		const needsSecondaryLink = Boolean(structureId) && !shouldSetAsMain;
-
-		// Without a structure step the response shape stays exactly what it was.
-		if (!contactResponse.success || (!structureResponse && !needsSecondaryLink)) {
+		// Without a structure step the response shape stays exactly what it was: a
+		// plain create keeps returning the contact at the root.
+		if (!contactResponse.success || !structureRequested) {
 			return ResponseUtils.formatSingleResponse(context, contactResponse);
 		}
 
+		// From here every branch returns the same `{ contact, structure, link }`
+		// envelope, so a downstream node can map the output from the node's
+		// configuration alone — with `structure` and `link` set to null when the
+		// lookup found nothing rather than the envelope disappearing.
 		if (structureResponse && !structureResponse.success) {
 			return ResponseUtils.formatSingleResponse(context, {
 				success: true,
@@ -237,6 +261,16 @@ export class ContactResource implements IResourceStrategy {
 			});
 		}
 
+		// Nothing left to link: the lookup matched nothing and no structure was
+		// created. The `link-structure` route needs a name or a SIRET, so there is
+		// no call left to make — only the envelope, kept for the shape.
+		if (!structureId && !structureData.name && !structureData.siret) {
+			return ResponseUtils.formatSingleResponse(context, {
+				success: true,
+				data: { contact: contactResponse.data, structure: null, link: null },
+			});
+		}
+
 		const linkData: IDataObject = {
 			email,
 			mainStructure: shouldSetAsMain,
@@ -245,7 +279,10 @@ export class ContactResource implements IResourceStrategy {
 			...(structureData.siret ? { siret: structureData.siret } : {}),
 		};
 
-		context.logger.info('Linking structure to contact with data:', linkData);
+		context.logger.debug('Linking structure to contact', {
+			mainStructure: shouldSetAsMain,
+			byId: Boolean(structureId),
+		});
 		const linkResponse = structureId
 			? await apiService.linkContactToStructure(context, linkData)
 			: await apiService.linkStructureToContact(context, linkData);
@@ -295,16 +332,29 @@ export class ContactResource implements IResourceStrategy {
 			itemIndex,
 			{},
 		) as IDataObject;
+		const findCriteria = ContactHelpers.buildStructureFindQuery(findStructureInput);
 
-		const structureId = await this.findStructureId(
-			context,
-			apiService,
-			ContactHelpers.buildStructureFindQuery(findStructureInput),
-		);
+		let structureId = '';
+		let setAsMainStructure = findStructureInput.setAsMainStructure !== false;
+
+		if (Object.keys(findCriteria).length > 0) {
+			structureId = await this.findStructureId(context, apiService, findCriteria);
+		} else {
+			// Find Structure replaced the Link Structure picker. Workflows built
+			// against the old field still carry their selection, and dropping it
+			// would unlink structures without reporting anything, so it is read as
+			// a fallback whenever no lookup criterion is configured.
+			const legacy = ContactHelpers.readLegacyLinkStructure(context.getNode().parameters);
+
+			if (legacy.structureId) {
+				structureId = legacy.structureId;
+				setAsMainStructure = legacy.setAsMainStructure;
+			}
+		}
 
 		if (structureId) {
 			rawUpdateFields.structureId = structureId;
-			rawUpdateFields.setAsMainStructure = findStructureInput.setAsMainStructure !== false;
+			rawUpdateFields.setAsMainStructure = setAsMainStructure;
 		}
 
 		const noteUpdateWrapper = context.getNodeParameter('noteUpdate', itemIndex, {}) as IDataObject;

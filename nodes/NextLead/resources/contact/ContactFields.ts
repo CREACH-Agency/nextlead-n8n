@@ -41,17 +41,28 @@ const structureFindIdField: IFieldConfig = {
 };
 
 /**
+ * Governs how an *existing* structure is attached. It sits next to the lookup
+ * criteria rather than in the creation group, because that is where the user
+ * decides to attach a structure that already exists — the creation group keeps
+ * its own toggle for the structure it creates.
+ */
+const setAsMainStructureField: IFieldConfig = {
+	displayName: 'Set as Main Structure',
+	name: 'setAsMainStructure',
+	description:
+		"Whether to set this structure as the contact's main structure. If disabled, the structure is only added as a secondary link.",
+	type: 'boolean',
+	default: true,
+};
+
+/**
  * CRM qualification fields, sent under the short API names. Contact type, lead
  * source and sector are organization tags, so they are loaded from NextLead
  * rather than typed by hand; priority is a fixed enum.
  */
-/* eslint-disable n8n-nodes-base/node-param-display-name-wrong-for-dynamic-options --
-   These dropdowns are named after what they hold in the NextLead UI. The
-   convention's "Name or ID" suffix was dropped on request; the "choose from the
-   list or use an expression" hint stays in the description. */
 const crmConfigFields: IFieldConfig[] = [
 	{
-		displayName: 'Contact Type',
+		displayName: 'Contact Type Name or ID',
 		name: 'contact_type',
 		description:
 			'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
@@ -60,7 +71,7 @@ const crmConfigFields: IFieldConfig[] = [
 		typeOptions: { loadOptionsMethod: 'getContactTypes' },
 	},
 	{
-		displayName: 'Lead Source',
+		displayName: 'Lead Source Name or ID',
 		name: 'lead_source',
 		description:
 			'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
@@ -71,7 +82,7 @@ const crmConfigFields: IFieldConfig[] = [
 	{
 		displayName: 'Priority',
 		name: 'priority',
-		description: 'Priority of the contact (Zapier equivalent of contact_priority)',
+		description: 'Priority level assigned to the contact in NextLead',
 		type: 'options',
 		default: '',
 		options: [
@@ -82,7 +93,7 @@ const crmConfigFields: IFieldConfig[] = [
 		],
 	},
 	{
-		displayName: 'Sector',
+		displayName: 'Sector Name or ID',
 		name: 'sector',
 		description:
 			'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
@@ -91,15 +102,13 @@ const crmConfigFields: IFieldConfig[] = [
 		typeOptions: { loadOptionsMethod: 'getSectors' },
 	},
 ];
-/* eslint-enable n8n-nodes-base/node-param-display-name-wrong-for-dynamic-options */
 
 /**
  * Conversion status is defined once and reused: it belongs to the same
  * qualification group as the CRM fields but lives in `nextlead_config` too.
  */
 const conversionStatusField: IFieldConfig = {
-	// eslint-disable-next-line n8n-nodes-base/node-param-display-name-wrong-for-dynamic-options -- named after the NextLead UI, see crmConfigFields
-	displayName: 'Conversion Status',
+	displayName: 'Conversion Status Name or ID',
 	name: 'conversion_status',
 	description:
 		'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
@@ -417,10 +426,10 @@ const createFields = [
 		name: 'findStructure',
 		displayName: 'Find Structure',
 		description:
-			'Look up an existing structure and link it to the contact. Used only when no structure is selected in Organization Settings; when nothing matches, the Create & Link Structure fields are used instead. Criteria matching several structures fail the node rather than picking one.',
+			'Look up an existing structure and link it to the contact. Used only when no structure is selected in Organization Settings; when nothing matches, the Create & Link Structure fields are used instead. Criteria matching several structures fail the node rather than picking one. Set as Main Structure applies to any existing structure, including one picked in Organization Settings.',
 		placeholder: 'Add Criterion',
 		operations: ['create'],
-		fields: structureFindFields,
+		fields: [...structureFindFields, setAsMainStructureField],
 	}),
 	{
 		displayName: 'Custom Fields',
@@ -768,14 +777,7 @@ const updateFields = [
 			// reachable as a criterion of its own.
 			structureFindIdField,
 			...structureFindFields,
-			{
-				displayName: 'Set as Main Structure',
-				name: 'setAsMainStructure',
-				description:
-					"Whether to set this structure as the contact's main structure. If disabled, the structure is only added as a secondary link.",
-				type: 'boolean',
-				default: true,
-			},
+			setAsMainStructureField,
 		],
 	}),
 ];
@@ -943,30 +945,13 @@ const linkToStructureFields = [
 	},
 ];
 
-/**
- * `FieldDefinitionUtils` only scopes a property by operation, and several
- * resources share operation names (`update`, `delete`, ...). Without the
- * resource in `displayOptions`, contact properties surface under Structure or
- * Sale — and vice versa. Stamping it here keeps every contact property scoped
- * without touching the shared factory. Parameter names are unchanged, so saved
- * workflows keep their values.
- */
-function scopeToContact(property: INodeProperties): INodeProperties {
-	const show = property.displayOptions?.show ?? {};
-
-	return {
-		...property,
-		displayOptions: {
-			...property.displayOptions,
-			show: { resource: ['contact'], ...show },
-		},
-	};
-}
-
+// `ResourceManager.getAllFields` stamps `displayOptions.show.resource` on every
+// property it collects, so a property defined here without one is still scoped
+// to the contact resource by the time it reaches the node description.
 export const contactFields: INodeProperties[] = [
 	...createFields,
 	...updateFields,
 	...deleteFields,
 	...findFields,
 	...linkToStructureFields,
-].map(scopeToContact);
+];
