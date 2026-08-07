@@ -2,6 +2,8 @@ import { IExecuteFunctions, INodeExecutionData, INodeProperties, IDataObject } f
 import { ResourceType, OperationType, NextLeadCredentials } from '../core/types/NextLeadTypes';
 import { IResourceStrategy } from '../core/interfaces/IResourceStrategy';
 import { NextLeadApiService } from '../core/NextLeadApiService';
+import { NextLeadApiResponse } from '../core/types/shared/ApiTypes';
+import { createNextLeadError } from '../core/types/n8n/ErrorTypes';
 import { ResponseUtils } from '../utils/ResponseUtils';
 import { contactOperations, contactFields } from './contact/ContactFields';
 import { ContactHelpers } from './contact/ContactHelpers';
@@ -52,6 +54,47 @@ export class ContactResource implements IResourceStrategy {
 		}
 	}
 
+	/**
+	 * Resolves an existing structure from the Find Structure criteria.
+	 *
+	 * Only a 404 counts as "no match" and lets the caller fall back to creating a
+	 * structure. Every other failure is raised: `get-single-structure` answers 409
+	 * when the criteria match several structures, and silently creating a
+	 * duplicate there would be the opposite of what the user asked for.
+	 */
+	private async findStructureId(
+		context: IExecuteFunctions,
+		apiService: NextLeadApiService,
+		criteria: IDataObject,
+	): Promise<string> {
+		if (Object.keys(criteria).length === 0) return '';
+
+		context.logger.info('Looking up structure with criteria:', criteria);
+		const response = await apiService.findSingleStructure(context, criteria);
+
+		if (!response.success) {
+			const { statusCode } = createNextLeadError(response.httpError);
+
+			if (statusCode === 404) {
+				context.logger.info('No structure matched the Find Structure criteria');
+				return '';
+			}
+
+			// The route answers 409 when the criteria match more than one structure.
+			// Its own wording does not always survive n8n's error wrapping, so the
+			// actionable version is spelled out here rather than relayed.
+			if (statusCode === 409) {
+				throw new Error(
+					'Several structures match the Find Structure criteria. Add a narrower criterion (structure ID or SIRET) so that exactly one structure matches.',
+				);
+			}
+
+			throw new Error(`Structure lookup failed: ${response.error}`);
+		}
+
+		return ContactHelpers.extractStructureId(response.data);
+	}
+
 	private async handleCreate(
 		context: IExecuteFunctions,
 		itemIndex: number,
@@ -84,7 +127,7 @@ export class ContactResource implements IResourceStrategy {
 		const nextlead_config = ContactHelpers.transformComplexField(
 			context.getNodeParameter('nextlead_config', itemIndex, {}) as IDataObject,
 			'config',
-		);
+		).map((config) => ContactHelpers.normalizeCrmAliases(config));
 		const custom_fields = ContactHelpers.transformCustomFields(
 			context.getNodeParameter('custom_fields', itemIndex, {}) as IDataObject,
 		);
@@ -109,29 +152,69 @@ export class ContactResource implements IResourceStrategy {
 			itemIndex,
 			{},
 		) as IDataObject;
-		const newStructureInput = (newStructureWrapper.structure ?? {}) as IDataObject;
-		const newStructureName = ((newStructureInput.name as string) || '').trim();
+		const { setAsMainStructure, ...structurePayload } = (newStructureWrapper.structure ?? {}) as {
+			setAsMainStructure?: boolean;
+		} & IDataObject;
+		const structureData = ContactHelpers.cleanFields(structurePayload);
+		const shouldSetAsMain = setAsMainStructure !== false;
+
+		// Structure resolution follows the Zapier order — explicit ID, then lookup,
+		// then creation — and happens *before* the contact so the link can be part
+		// of the create payload instead of a follow-up call.
+		let structureId = ContactHelpers.extractStructureIdFromLocator(
+			organizationFields.establishmentId,
+		);
+
+		if (!structureId) {
+			structureId = await this.findStructureId(
+				context,
+				apiService,
+				ContactHelpers.buildStructureFindQuery(
+					context.getNodeParameter('findStructure', itemIndex, {}) as IDataObject,
+				),
+			);
+		}
+
+		// Creating a structure needs at least one of the fields NextLead identifies
+		// it by; anything else would produce an anonymous record.
+		const canCreateStructure =
+			!structureId && Boolean(structureData.name || structureData.siret || structureData.email);
+		let structureResponse: NextLeadApiResponse | null = null;
+
+		if (canCreateStructure) {
+			context.logger.info('Creating structure with data:', structureData);
+			structureResponse = await apiService.createStructure(context, structureData);
+
+			if (structureResponse.success) {
+				structureId = ContactHelpers.extractStructureId(structureResponse.data);
+			}
+		}
+
+		// A secondary link cannot be expressed in the create payload, so it stays a
+		// follow-up `link-to-contact` call with `mainStructure: false`.
+		if (structureId && shouldSetAsMain) {
+			contactData.structureId = structureId;
+		}
+
+		const preferredLanguage = (contactFields.preferredLanguage as string) || '';
 
 		context.logger.info('Creating contact with data:', contactData);
-		const contactResponse = await apiService.createContact(context, contactData);
+		const contactResponse = await apiService.createContact(
+			context,
+			contactData,
+			preferredLanguage ? { 'X-PREFERRED-LANGUAGE': preferredLanguage } : undefined,
+		);
 
-		if (!contactResponse.success || !newStructureName) {
+		// A structure that must stay secondary still needs the follow-up link call,
+		// even when it was not created here.
+		const needsSecondaryLink = Boolean(structureId) && !shouldSetAsMain;
+
+		// Without a structure step the response shape stays exactly what it was.
+		if (!contactResponse.success || (!structureResponse && !needsSecondaryLink)) {
 			return ResponseUtils.formatSingleResponse(context, contactResponse);
 		}
 
-		const { setAsMainStructure, ...structurePayload } = newStructureInput as {
-			setAsMainStructure?: boolean;
-		} & IDataObject;
-
-		const structureData = ContactHelpers.cleanFields({
-			...structurePayload,
-			name: newStructureName,
-		});
-
-		context.logger.info('Creating structure with data:', structureData);
-		const structureResponse = await apiService.createStructure(context, structureData);
-
-		if (!structureResponse.success) {
+		if (structureResponse && !structureResponse.success) {
 			return ResponseUtils.formatSingleResponse(context, {
 				success: true,
 				data: {
@@ -143,24 +226,35 @@ export class ContactResource implements IResourceStrategy {
 			});
 		}
 
-		const shouldSetAsMain = setAsMainStructure !== false;
+		if (structureId && shouldSetAsMain) {
+			return ResponseUtils.formatSingleResponse(context, {
+				success: true,
+				data: {
+					contact: contactResponse.data,
+					structure: structureResponse?.data ?? null,
+					link: { linked: true, structureId, mainStructure: true },
+				},
+			});
+		}
+
 		const linkData: IDataObject = {
 			email,
-			structure_name: newStructureName,
 			mainStructure: shouldSetAsMain,
+			...(structureId ? { structureId } : {}),
+			...(structureData.name ? { structure_name: structureData.name } : {}),
+			...(structureData.siret ? { siret: structureData.siret } : {}),
 		};
 
-		const siret = (structureData.siret as string) || '';
-		if (siret) linkData.siret = siret;
-
 		context.logger.info('Linking structure to contact with data:', linkData);
-		const linkResponse = await apiService.linkStructureToContact(context, linkData);
+		const linkResponse = structureId
+			? await apiService.linkContactToStructure(context, linkData)
+			: await apiService.linkStructureToContact(context, linkData);
 
 		return ResponseUtils.formatSingleResponse(context, {
 			success: true,
 			data: {
 				contact: contactResponse.data,
-				structure: structureResponse.data,
+				structure: structureResponse?.data ?? null,
 				link: linkResponse.success ? linkResponse.data : null,
 				...(linkResponse.success ? {} : { linkError: linkResponse.error }),
 			},
@@ -172,34 +266,52 @@ export class ContactResource implements IResourceStrategy {
 		itemIndex: number,
 		apiService: NextLeadApiService,
 	): Promise<INodeExecutionData[]> {
+		const contactId = context.getNodeParameter('contactId', itemIndex, '') as string;
 		const email = context.getNodeParameter('email', itemIndex, '') as string;
 		const linkedinFind = context.getNodeParameter('linkedinFind', itemIndex, '') as string;
 
-		if (!email && !linkedinFind) throw new Error('Either email or LinkedIn URL must be provided');
+		if (!contactId && !email && !linkedinFind) {
+			throw new Error('Either contact ID, email or LinkedIn URL must be provided');
+		}
 
-		const rawUpdateFields = context.getNodeParameter('updateFields', itemIndex) as IDataObject;
+		// Left uncleaned on purpose: a collection only carries the fields the user
+		// explicitly added, so an empty value there means "clear this field".
+		const rawUpdateFields = ContactHelpers.normalizeCrmAliases(
+			context.getNodeParameter('updateFields', itemIndex, {}) as IDataObject,
+		);
 
-		// Extract linkStructure fixedCollection
-		const linkStructureWrapper = context.getNodeParameter(
-			'linkStructure',
+		const customFields = ContactHelpers.transformCustomFields(
+			context.getNodeParameter('customFieldsUpdate', itemIndex, {}) as IDataObject,
+		);
+		// `values_update` is flat, so the custom fields land as
+		// `selected_fieldN` / `value_N` next to the other keys.
+		if (customFields.length > 0) Object.assign(rawUpdateFields, customFields[0]);
+
+		// The structure is always resolved through `get-single-structure`, so the
+		// criteria can come from the incoming item rather than being fixed in the
+		// editor.
+		const findStructureInput = context.getNodeParameter(
+			'findStructureUpdate',
 			itemIndex,
 			{},
 		) as IDataObject;
-		const linkStructureInput = (linkStructureWrapper.structure ?? {}) as IDataObject;
 
-		if (linkStructureInput.structureId) {
-			const locator = linkStructureInput.structureId as IDataObject;
-			rawUpdateFields.structureId =
-				(typeof locator === 'object'
-					? (locator.value as string)
-					: (locator as unknown as string)) || '';
-			rawUpdateFields.setAsMainStructure = linkStructureInput.setAsMainStructure !== false;
+		const structureId = await this.findStructureId(
+			context,
+			apiService,
+			ContactHelpers.buildStructureFindQuery(findStructureInput),
+		);
+
+		if (structureId) {
+			rawUpdateFields.structureId = structureId;
+			rawUpdateFields.setAsMainStructure = findStructureInput.setAsMainStructure !== false;
 		}
 
 		const noteUpdateWrapper = context.getNodeParameter('noteUpdate', itemIndex, {}) as IDataObject;
 		const noteUpdateInput = (noteUpdateWrapper.noteData ?? {}) as IDataObject;
 
 		const updateData: IDataObject = {
+			...(contactId && { contactId }),
 			...(email && { mail: email }),
 			...(linkedinFind && { linkedin_find: linkedinFind }),
 			values_update: [rawUpdateFields],
@@ -224,14 +336,18 @@ export class ContactResource implements IResourceStrategy {
 		itemIndex: number,
 		apiService: NextLeadApiService,
 	): Promise<INodeExecutionData[]> {
+		const contactId = context.getNodeParameter('contactId', itemIndex, '') as string;
 		const email = context.getNodeParameter('email', itemIndex, '') as string;
 		const linkedin = context.getNodeParameter('linkedin', itemIndex, '') as string;
 
-		if (!email && !linkedin) throw new Error('Either email or LinkedIn URL must be provided');
+		if (!contactId && !email && !linkedin) {
+			throw new Error('Either contact ID, email or LinkedIn URL must be provided');
+		}
 
 		// The response has to be inspected: discarding it reported a success even
 		// when the contact did not exist or the API rejected the call.
 		const response = await apiService.deleteContact(context, {
+			...(contactId && { contactId }),
 			...(email && { email }),
 			...(linkedin && { linkedin }),
 		});

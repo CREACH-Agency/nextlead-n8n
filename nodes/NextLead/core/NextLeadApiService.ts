@@ -14,7 +14,7 @@ export class NextLeadApiService {
 		context: IExecuteFunctions | IPollFunctions,
 		config: RequestConfig,
 	): Promise<NextLeadApiResponse> {
-		const { method, endpoint, data, queryParams, timeout } = config;
+		const { method, endpoint, data, queryParams, headers, timeout } = config;
 
 		try {
 			const domain = this.credentials.domain.endsWith('/')
@@ -41,6 +41,10 @@ export class NextLeadApiService {
 
 			if (queryParams) {
 				requestOptions.qs = queryParams;
+			}
+
+			if (headers && Object.keys(headers).length > 0) {
+				requestOptions.headers = headers;
 			}
 
 			if (timeout) {
@@ -113,11 +117,13 @@ export class NextLeadApiService {
 	async createContact(
 		context: IExecuteFunctions,
 		contactData: IDataObject,
+		headers?: Record<string, string>,
 	): Promise<NextLeadApiResponse> {
 		return this.makeRequest(context, {
 			method: 'POST',
 			endpoint: '/api/v2/receive/contact/new-contact',
 			data: contactData,
+			...(headers && { headers }),
 		});
 	}
 
@@ -205,6 +211,22 @@ export class NextLeadApiService {
 			method: 'POST',
 			endpoint: '/api/v2/receive/structure/delete-structure',
 			data: { id: structureId },
+		});
+	}
+
+	/**
+	 * Resolve a single structure from loose criteria (id, name, siret, email,
+	 * phone). Mirrors the lookup the Zapier integration performs before creating
+	 * or editing a contact, so both integrations resolve a structure the same way.
+	 */
+	async findSingleStructure(
+		context: IExecuteFunctions,
+		searchParams: IDataObject,
+	): Promise<NextLeadApiResponse> {
+		return this.makeRequest(context, {
+			method: 'GET',
+			endpoint: '/api/v2/receive/structure/get-single-structure',
+			queryParams: searchParams,
 		});
 	}
 

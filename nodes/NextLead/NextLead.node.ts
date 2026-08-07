@@ -30,6 +30,37 @@ interface INamedEntity {
 	name?: string;
 }
 
+/**
+ * A fixedCollection materialises every one of its sub-fields as soon as the
+ * group is added, so each dropdown starts on the empty string — a value n8n
+ * refuses because it is not in the option list ("The value "" is not
+ * supported!"). Offering the empty entry explicitly makes "leave this one out"
+ * a legal choice, and the payload builders already strip empty values.
+ */
+const NONE_OPTION: INodePropertyOptions = { name: '- None -', value: '' };
+
+/** Structures fetched per dropdown page. The route caps `limit` at 500. */
+const STRUCTURE_PAGE_SIZE = 50;
+
+/** Tag-backed dropdowns (contact type, lead source, sector) share this shape. */
+async function loadTagOptions(
+	context: ILoadOptionsFunctions,
+	route: string,
+): Promise<INodePropertyOptions[]> {
+	try {
+		const response = await fetchMetadata(context, route);
+
+		return [
+			NONE_OPTION,
+			...unwrapArray<INamedEntity>(response)
+				.filter((tag): tag is { id: string; name: string } => Boolean(tag.id && tag.name))
+				.map((tag) => ({ name: tag.name, value: tag.id })),
+		];
+	} catch {
+		return [NONE_OPTION];
+	}
+}
+
 export class NextLead implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'NextLead',
@@ -141,13 +172,25 @@ export class NextLead implements INodeType {
 
 					// An empty list is a valid answer: the user has to configure
 					// conversion statuses in NextLead first.
-					return unwrapArray<ConversionStatus>(response).map((status) => ({
-						name: status.name,
-						value: status.id,
-					}));
+					return [
+						NONE_OPTION,
+						...unwrapArray<ConversionStatus>(response).map((status) => ({
+							name: status.name,
+							value: status.id,
+						})),
+					];
 				} catch {
-					return [];
+					return [NONE_OPTION];
 				}
+			},
+			async getContactTypes(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				return loadTagOptions(this, '/api/v2/receive/contact/get-contact-types');
+			},
+			async getLeadSources(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				return loadTagOptions(this, '/api/v2/receive/contact/get-lead-sources');
+			},
+			async getSectors(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				return loadTagOptions(this, '/api/v2/receive/contact/get-sectors');
 			},
 			async getSaleColumns(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				try {
@@ -176,21 +219,27 @@ export class NextLead implements INodeType {
 			async getTeamMembers(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const members = await fetchTeamMembers(this);
 
-				return members.map((member) => ({
-					name: member.label,
-					value: member.id,
-				}));
+				return [
+					NONE_OPTION,
+					...members.map((member) => ({
+						name: member.label,
+						value: member.id,
+					})),
+				];
 			},
 			async getLists(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				try {
 					const response = await fetchMetadata(this, '/api/v2/receive/lists/get-lists');
 
-					return unwrapArray<{ id: string; name: string }>(response).map((list) => ({
-						name: list.name,
-						value: list.id,
-					}));
+					return [
+						NONE_OPTION,
+						...unwrapArray<{ id: string; name: string }>(response).map((list) => ({
+							name: list.name,
+							value: list.id,
+						})),
+					];
 				} catch {
-					return [];
+					return [NONE_OPTION];
 				}
 			},
 			async getGroups(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
@@ -209,14 +258,17 @@ export class NextLead implements INodeType {
 				try {
 					const response = await fetchMetadata(this, '/api/v2/receive/contact/get-custom-fields');
 
-					return unwrapArray<{ id: string; name: string; groupName?: string }>(response).map(
-						(field) => ({
-							name: field.groupName ? `${field.groupName} > ${field.name}` : field.name,
-							value: field.id,
-						}),
-					);
+					return [
+						NONE_OPTION,
+						...unwrapArray<{ id: string; name: string; groupName?: string }>(response).map(
+							(field) => ({
+								name: field.groupName ? `${field.groupName} > ${field.name}` : field.name,
+								value: field.id,
+							}),
+						),
+					];
 				} catch {
-					return [];
+					return [NONE_OPTION];
 				}
 			},
 		},
@@ -234,19 +286,33 @@ export class NextLead implements INodeType {
 						.map((member) => ({ name: member.label, value: member.id })),
 				};
 			},
+			/**
+			 * `get-structures` filters on name/siret server-side and pages with
+			 * `limit`/`offset`, so both are always sent: omitting `limit` makes the
+			 * route answer with the organization's entire table, which an org with
+			 * thousands of structures would download on every dropdown open — and
+			 * metadata reads are billed against the EXTERNAL_AUTOMATION quota.
+			 */
 			async searchStructures(
 				this: ILoadOptionsFunctions,
 				filter?: string,
+				paginationToken?: string,
 			): Promise<INodeListSearchResult> {
 				try {
 					const searchTerm = (filter ?? '').trim();
+					const parsedOffset = Number.parseInt(paginationToken ?? '', 10);
+					const offset = Number.isFinite(parsedOffset) && parsedOffset > 0 ? parsedOffset : 0;
+
 					const response = await fetchMetadata(this, '/api/v2/receive/structure/get-structures', {
 						...(searchTerm && { search: searchTerm }),
-						limit: 5,
+						limit: STRUCTURE_PAGE_SIZE,
+						...(offset > 0 && { offset }),
 					});
 
+					const structures = unwrapArray<INamedEntity & { siret?: string }>(response);
+
 					return {
-						results: unwrapArray<INamedEntity & { siret?: string }>(response)
+						results: structures
 							.map((structure) => {
 								const id = structure.id ?? '';
 								if (!id) return null;
@@ -258,6 +324,11 @@ export class NextLead implements INodeType {
 								};
 							})
 							.filter((item): item is { name: string; value: string } => item !== null),
+						// A short page means the end of the list. Handing back a token
+						// there would have n8n fetch an empty page on every scroll.
+						...(structures.length === STRUCTURE_PAGE_SIZE && {
+							paginationToken: String(offset + STRUCTURE_PAGE_SIZE),
+						}),
 					};
 				} catch {
 					return { results: [] };

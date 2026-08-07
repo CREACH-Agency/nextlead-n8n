@@ -15,6 +15,8 @@ export interface RequestConfig {
 	endpoint: string;
 	data?: IDataObject;
 	queryParams?: IDataObject;
+	/** Extra request headers, on top of the ones added by the credential */
+	headers?: Record<string, string>;
 	/** Request timeout in ms, for endpoints slower than the default */
 	timeout?: number;
 }
