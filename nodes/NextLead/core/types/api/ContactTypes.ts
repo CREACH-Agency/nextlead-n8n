@@ -19,7 +19,19 @@ export interface ContactSocial {
 	url: string;
 }
 
-export interface ContactNextleadConfig {
+/**
+ * CRM qualification keys shared by create and edit. The Zapier integration
+ * exposes them as `contact_lead_source` / `contact_sector` / `contact_priority`
+ * but sends them under these shorter API names.
+ */
+export interface ContactCrmConfig {
+	contact_type?: string;
+	lead_source?: string;
+	sector?: string;
+	priority?: string;
+}
+
+export interface ContactNextleadConfig extends ContactCrmConfig {
 	lead_score?: number;
 	conversion_status?: string;
 	assigned_to?: string; // user ID
@@ -53,6 +65,31 @@ export interface ContactBaseFields {
 	civility?: ContactCivility;
 	status?: ContactStatus;
 	birthDate?: string;
+	preferredLanguage?: string;
+}
+
+/** Criteria accepted by `structure/get-single-structure`. */
+export interface ContactStructureFindCriteria extends IDataObject {
+	find_structure_id?: string;
+	name?: string;
+	siret?: string;
+	email?: string;
+	phone?: string;
+}
+
+/** Body of `contact/edit-contact`. At least one identifier is required. */
+export interface ContactEditRequest extends IDataObject {
+	contactId?: string;
+	mail?: string;
+	linkedin_find?: string;
+	values_update: IDataObject[];
+}
+
+/** Body of `contact/delete-contact`. At least one identifier is required. */
+export interface ContactDeleteRequest extends IDataObject {
+	contactId?: string;
+	email?: string;
+	linkedin?: string;
 }
 
 export interface ContactManagementFields {
