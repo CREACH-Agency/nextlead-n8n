@@ -64,7 +64,7 @@ export class NextLeadTrigger implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'NextLead Trigger',
 		name: 'nextLeadTrigger',
-		icon: 'file:nextlead.svg',
+		icon: { light: 'file:nextlead.svg', dark: 'file:nextlead.dark.svg' },
 		group: ['trigger'],
 		version: 1,
 		subtitle: '={{$parameter["event"]}}',
