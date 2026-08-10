@@ -1,4 +1,4 @@
-import { IExecuteFunctions, IDataObject, NodeOperationError } from 'n8n-workflow';
+import { IExecuteFunctions, IDataObject, NodeApiError, NodeOperationError } from 'n8n-workflow';
 
 import { NextLeadApiResponse } from '../core/types/shared/ApiTypes';
 
@@ -185,12 +185,27 @@ export class OperationHandlerUtils {
 
 			return response.data;
 		} catch (error: unknown) {
-			if (error instanceof NodeOperationError) {
-				throw error;
-			}
-			const message = error instanceof Error ? error.message : String(error);
-			throw new NodeOperationError(context.getNode(), `${operationName} failed: ${message}`);
+			throw this.toNodeError(context, operationName, error);
 		}
+	}
+
+	/**
+	 * Errors already shaped for the n8n UI (NodeApiError keeps the HTTP response,
+	 * NodeOperationError the operation message) travel untouched — re-wrapping
+	 * them would strip that context. Anything else becomes a NodeOperationError
+	 * carrying the operation name.
+	 */
+	private static toNodeError(
+		context: IExecuteFunctions,
+		operationName: string,
+		error: unknown,
+	): NodeApiError | NodeOperationError {
+		if (error instanceof NodeApiError || error instanceof NodeOperationError) {
+			return error;
+		}
+
+		const message = error instanceof Error ? error.message : String(error);
+		return new NodeOperationError(context.getNode(), `${operationName} failed: ${message}`);
 	}
 
 	static buildDataObject(params: Record<string, unknown>): IDataObject {

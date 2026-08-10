@@ -65,7 +65,7 @@ export class NextLead implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'NextLead',
 		name: 'nextLead',
-		icon: 'file:nextlead.svg',
+		icon: { light: 'file:nextlead.svg', dark: 'file:nextlead.dark.svg' },
 		/*
 		 * - ['trigger']: Node waits for external triggers (webhooks, timers, events)
 		 * - []: Empty array for standard nodes
