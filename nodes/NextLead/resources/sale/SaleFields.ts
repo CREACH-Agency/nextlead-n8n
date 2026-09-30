@@ -1,6 +1,24 @@
 import { INodeProperties } from 'n8n-workflow';
 import { FieldDefinitionUtils } from '../../utils/FieldDefinitionUtils';
 
+/**
+ * Currencies NextLead accepts on a sale (`lib/currency.ts` in the CRM). The
+ * empty entry leaves the organization default in charge.
+ */
+const currencyOptions = [
+	{ name: '- Default -', value: '' },
+	{ name: 'AUD', value: 'AUD' },
+	{ name: 'BRL', value: 'BRL' },
+	{ name: 'CAD', value: 'CAD' },
+	{ name: 'CHF', value: 'CHF' },
+	{ name: 'CNY', value: 'CNY' },
+	{ name: 'EUR', value: 'EUR' },
+	{ name: 'GBP', value: 'GBP' },
+	{ name: 'INR', value: 'INR' },
+	{ name: 'JPY', value: 'JPY' },
+	{ name: 'USD', value: 'USD' },
+];
+
 export const saleOperations: INodeProperties[] = [
 	{
 		displayName: 'Operation',
@@ -82,6 +100,30 @@ const createFields = [
 				displayName: 'Value',
 				name: 'value',
 				description: 'Sale value/amount',
+			},
+			{
+				displayName: 'Cost',
+				name: 'cost',
+				description: 'Cost of the sale, in the sale currency',
+				type: 'number' as const,
+				default: 0,
+			},
+			{
+				displayName: 'Currency',
+				name: 'currency',
+				description: 'ISO 4217 code of the sale. Defaults to the sales currency of the organization.',
+				type: 'options' as const,
+				default: '',
+				options: currencyOptions,
+			},
+			{
+				displayName: 'VAT Rate',
+				name: 'vat_rate',
+				description:
+					'VAT rate in percent (0-100). The value stays excluding tax. Defaults to the VAT rate of the organization.',
+				type: 'number' as const,
+				default: 0,
+				typeOptions: { minValue: 0, maxValue: 100 },
 			},
 			{
 				displayName: 'Success Rate',
@@ -178,6 +220,44 @@ const updateFields = [
 					minValue: 0,
 					maxValue: 100,
 				},
+			},
+			{
+				displayName: 'Cost',
+				name: 'cost',
+				description: 'Cost of the sale, in the sale currency',
+				type: 'number' as const,
+				default: 0,
+			},
+			{
+				displayName: 'Currency',
+				name: 'currency',
+				description: 'ISO 4217 code of the sale. Defaults to the sales currency of the organization.',
+				type: 'options' as const,
+				default: '',
+				options: currencyOptions,
+			},
+			{
+				displayName: 'VAT Rate',
+				name: 'vat_rate',
+				description:
+					'VAT rate in percent (0-100). The value stays excluding tax. Defaults to the VAT rate of the organization.',
+				type: 'number' as const,
+				default: 0,
+				typeOptions: { minValue: 0, maxValue: 100 },
+			},
+			{
+				displayName: 'Close Date',
+				name: 'closeDate',
+				description: 'Expected close date for the sale (YYYY-MM-DD)',
+			},
+			{
+				displayName: 'Assigned To Name or ID',
+				name: 'assignedToId',
+				type: 'options' as const,
+				default: '',
+				typeOptions: { loadOptionsMethod: 'getTeamMembers' },
+				description:
+					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 			},
 		],
 	}),

@@ -98,9 +98,33 @@ const createFields = [
 				default: '',
 			},
 			{
+				displayName: 'Secondary Phone',
+				name: 'phone2',
+				description: 'Second phone number of the structure',
+				default: '',
+			},
+			{
+				displayName: 'Third Phone',
+				name: 'phone3',
+				description: 'Third phone number of the structure',
+				default: '',
+			},
+			{
 				displayName: 'Email',
 				name: 'email',
 				description: 'Email address of the structure',
+				default: '',
+			},
+			{
+				displayName: 'Secondary Email',
+				name: 'email2',
+				description: 'Second email address of the structure',
+				default: '',
+			},
+			{
+				displayName: 'Third Email',
+				name: 'email3',
+				description: 'Third email address of the structure',
 				default: '',
 			},
 			{
@@ -129,7 +153,6 @@ const updateFields = [
 		displayName: 'Structure Name or ID',
 		name: 'structureId',
 		type: 'resourceLocator' as const,
-		required: true,
 		displayOptions: {
 			show: {
 				resource: ['structure'],
@@ -156,7 +179,31 @@ const updateFields = [
 				placeholder: 'structure-id',
 			},
 		],
-		description: 'Choose from the structure list using search, or specify an ID directly',
+		description:
+			'Choose from the structure list using search, or specify an ID directly. Leave it empty to identify the structure by SIRET or name below.',
+	},
+	FieldDefinitionUtils.createStringField({
+		name: 'findSiret',
+		displayName: 'Find by SIRET',
+		description: 'SIRET of the structure to update, when no structure ID is given',
+		required: false,
+		operations: ['update'],
+	}),
+	FieldDefinitionUtils.createStringField({
+		name: 'findName',
+		displayName: 'Find by Name',
+		description: 'Exact name of the structure to update, when no structure ID is given',
+		required: false,
+		operations: ['update'],
+	}),
+	{
+		displayName: 'Create If Missing',
+		name: 'createIfMissing',
+		type: 'boolean' as const,
+		default: false,
+		displayOptions: { show: { resource: ['structure'], operation: ['update'] } },
+		description:
+			'Whether to create the structure when none matches the identifiers. It is created from the Update Fields, named after the Name field or the Find by Name value; the output carries created: true. Requires NextLead of October 2026 or later.',
 	},
 	FieldDefinitionUtils.createCollectionField({
 		name: 'updateFields',
@@ -177,9 +224,33 @@ const updateFields = [
 				default: '',
 			},
 			{
+				displayName: 'Secondary Email',
+				name: 'email2',
+				description: 'Second email address of the structure',
+				default: '',
+			},
+			{
+				displayName: 'Third Email',
+				name: 'email3',
+				description: 'Third email address of the structure',
+				default: '',
+			},
+			{
 				displayName: 'Phone',
 				name: 'phone',
 				description: 'Phone number of the structure',
+				default: '',
+			},
+			{
+				displayName: 'Secondary Phone',
+				name: 'phone2',
+				description: 'Second phone number of the structure',
+				default: '',
+			},
+			{
+				displayName: 'Third Phone',
+				name: 'phone3',
+				description: 'Third phone number of the structure',
 				default: '',
 			},
 			{

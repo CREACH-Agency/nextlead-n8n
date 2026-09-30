@@ -306,6 +306,11 @@ export class ContactResource implements IResourceStrategy {
 		const contactId = context.getNodeParameter('contactId', itemIndex, '') as string;
 		const email = context.getNodeParameter('email', itemIndex, '') as string;
 		const linkedinFind = context.getNodeParameter('linkedinFind', itemIndex, '') as string;
+		const createIfMissing = context.getNodeParameter(
+			'createIfMissing',
+			itemIndex,
+			false,
+		) as boolean;
 
 		if (!contactId && !email && !linkedinFind) {
 			throw new Error('Either contact ID, email or LinkedIn URL must be provided');
@@ -365,6 +370,9 @@ export class ContactResource implements IResourceStrategy {
 			...(email && { mail: email }),
 			...(linkedinFind && { linkedin_find: linkedinFind }),
 			values_update: [rawUpdateFields],
+			// Find or create: the API creates the contact from the identifiers and
+			// values_update when nothing matches, instead of answering 404.
+			...(createIfMissing && { create_if_missing: true }),
 			...(noteUpdateInput.note_content && {
 				note: noteUpdateInput.note_title
 					? { content: noteUpdateInput.note_content, title: noteUpdateInput.note_title }
