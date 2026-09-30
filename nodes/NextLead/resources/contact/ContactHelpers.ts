@@ -11,6 +11,18 @@ import { IDataObject } from 'n8n-workflow';
  */
 const STRUCTURE_FIND_KEYS = ['name', 'siret', 'email', 'phone'] as const;
 
+/**
+ * NextLead renamed its coordinate columns on 2026-09-25: `mobile` became
+ * `phone2` and `phonePro` became `phone3`. n8n stores parameter values by
+ * field name, so workflows saved before that date still carry the old keys.
+ * Translating them here keeps those workflows writing to the CRM instead of
+ * failing with a 400 (create) or silently dropping the number (update).
+ */
+const LEGACY_FIELD_ALIASES: Record<string, string> = {
+	mobile: 'phone2',
+	phonePro: 'phone3',
+};
+
 const CRM_CONFIG_ALIASES: Record<string, string> = {
 	contact_lead_source: 'lead_source',
 	contact_sector: 'sector',
@@ -62,7 +74,11 @@ export class ContactHelpers {
 		const cleaned: IDataObject = {};
 		Object.entries(fields).forEach(([key, value]) => {
 			const normalizedValue = this.extractResourceLocatorValue(value);
-			if (normalizedValue !== undefined && normalizedValue !== '') cleaned[key] = normalizedValue;
+			if (normalizedValue === undefined || normalizedValue === '') return;
+			const target = LEGACY_FIELD_ALIASES[key] ?? key;
+			// A value entered under the current name always wins over its legacy alias.
+			if (target !== key && cleaned[target] !== undefined) return;
+			cleaned[target] = normalizedValue;
 		});
 		return cleaned;
 	}
