@@ -70,14 +70,35 @@ export class StructureResource implements IResourceStrategy {
 		itemIndex: number,
 		apiService: NextLeadApiService,
 	): Promise<INodeExecutionData[]> {
-		const structureLocator = context.getNodeParameter('structureId', itemIndex) as IDataObject;
-		const structureId =
-			(structureLocator.value as string) || (structureLocator as unknown as string);
+		const structureLocator = context.getNodeParameter('structureId', itemIndex, {}) as
+			| IDataObject
+			| string;
+		const structureId = (
+			typeof structureLocator === 'string'
+				? structureLocator
+				: ((structureLocator.value as string) ?? '')
+		).trim();
+		const findSiret = (context.getNodeParameter('findSiret', itemIndex, '') as string).trim();
+		const findName = (context.getNodeParameter('findName', itemIndex, '') as string).trim();
+		const createIfMissing = context.getNodeParameter(
+			'createIfMissing',
+			itemIndex,
+			false,
+		) as boolean;
 		const updateFields = context.getNodeParameter('updateFields', itemIndex, {}) as IDataObject;
 
+		if (!structureId && !findSiret && !findName) {
+			throw new Error('Provide a structure ID, a SIRET or a name to identify the structure');
+		}
+
+		// `edit-structure` matches any of id / siret / name; with create_if_missing
+		// it creates the structure from values_update when nothing matches.
 		const updateData: IDataObject = {
-			id: structureId,
+			...(structureId && { id: structureId }),
+			...(findSiret && { siret: findSiret }),
+			...(findName && { name: findName }),
 			values_update: [updateFields],
+			...(createIfMissing && { create_if_missing: true }),
 		};
 
 		const response = await apiService.updateStructure(context, updateData);
@@ -140,7 +161,9 @@ export class StructureResource implements IResourceStrategy {
 		const linkData: IDataObject = {
 			...structureIdentifiers,
 			...contactIdentifiers,
-			linkAsSecondary,
+			// `link-to-contact` reads mainStructure; `linkAsSecondary` on its own was
+			// ignored server-side, so every link ended up secondary.
+			mainStructure: !linkAsSecondary,
 		};
 
 		if (structureCustomField.customFieldTypeId && structureCustomField.value) {

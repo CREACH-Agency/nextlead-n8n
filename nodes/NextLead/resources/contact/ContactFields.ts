@@ -132,6 +132,89 @@ const civilityField: IFieldConfig = {
 };
 
 /**
+ * Fields the API gained in September 2026 (third email, picture, consents,
+ * first-touch attribution), under the exact names `new-contact` and
+ * `edit-contact` read. Consents are booleans: an explicit false is a value
+ * the CRM stores, so the collection only sends them when the user adds them.
+ */
+const extendedContactFields: IFieldConfig[] = [
+	{
+		displayName: 'Birth Date',
+		name: 'birthDate',
+		description: 'Birth date of the contact',
+		type: 'dateTime',
+		default: '',
+	},
+	{
+		displayName: 'Third Email',
+		name: 'email3',
+		description: 'Third email address of the contact',
+		placeholder: 'name@email.com',
+	},
+	{
+		displayName: 'Photo URL',
+		name: 'image',
+		description: 'Public URL of the contact picture',
+	},
+	{
+		displayName: 'Opt-In Marketing',
+		name: 'optInMarketing',
+		description: 'Whether the contact consents to marketing emails',
+		type: 'boolean',
+		default: false,
+	},
+	{
+		displayName: 'Opt-In Newsletter',
+		name: 'optInNewsletter',
+		description: 'Whether the contact consents to the newsletter',
+		type: 'boolean',
+		default: false,
+	},
+	{
+		displayName: 'Opt-In Postal Mail',
+		name: 'optInPostal',
+		description: 'Whether the contact consents to postal mail',
+		type: 'boolean',
+		default: false,
+	},
+	{
+		displayName: 'Opt-In SMS',
+		name: 'optInSms',
+		description: 'Whether the contact consents to SMS',
+		type: 'boolean',
+		default: false,
+	},
+	{
+		displayName: 'Opt-Out',
+		name: 'optOut',
+		description:
+			'Whether the contact opted out of email communication. Enabling it disables the email consents.',
+		type: 'boolean',
+		default: false,
+	},
+	{
+		displayName: 'UTM Campaign',
+		name: 'utmCampaign',
+		description: 'First-touch attribution, written only if the contact has none yet',
+	},
+	{
+		displayName: 'UTM Medium',
+		name: 'utmMedium',
+		description: 'First-touch attribution, written only if the contact has none yet',
+	},
+	{
+		displayName: 'UTM Source',
+		name: 'utmSource',
+		description: 'First-touch attribution, written only if the contact has none yet',
+	},
+];
+
+/** `edit-contact` has no birth date in its whitelist, so update leaves it out. */
+const extendedContactUpdateFields = extendedContactFields.filter(
+	(field) => field.name !== 'birthDate',
+);
+
+/**
  * `createCollectionField` normalises an `IFieldConfig` into an `INodeProperties`
  * for collections; a fixedCollection's `values` needs the same treatment, so the
  * shared definitions above can be reused verbatim in both.
@@ -290,6 +373,7 @@ const createFields = [
 				displayName: 'Preferred Language',
 				description: 'Preferred language of the contact, as a locale code such as fr or en',
 			},
+			...extendedContactFields,
 		],
 	}),
 	FieldDefinitionUtils.createCollectionField({
@@ -621,6 +705,15 @@ const updateFields = [
 		operations: ['update'],
 		placeholder: 'https://linkedin.com/in/profile',
 	}),
+	{
+		displayName: 'Create If Missing',
+		name: 'createIfMissing',
+		type: 'boolean' as const,
+		default: false,
+		displayOptions: { show: { resource: ['contact'], operation: ['update'] } },
+		description:
+			'Whether to create the contact when none matches the identifiers. The record is created from the email and the Update Fields, then the update is applied as usual; the output carries created: true. Requires NextLead of October 2026 or later.',
+	},
 	FieldDefinitionUtils.createCollectionField({
 		name: 'updateFields',
 		displayName: 'Update Fields',
@@ -689,6 +782,7 @@ const updateFields = [
 				typeOptions: { minValue: 0, maxValue: 100 },
 			},
 			...crmConfigFields,
+			...extendedContactUpdateFields,
 		],
 	}),
 	{

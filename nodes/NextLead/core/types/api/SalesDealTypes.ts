@@ -11,6 +11,10 @@ export interface SalesDealBaseFields {
 	closeDate?: string;
 	description?: string;
 	priority?: SalesDealPriority;
+	/** Kept excluding tax; `vatRate` is a percentage (0-100). */
+	cost?: number;
+	currency?: string;
+	vatRate?: number;
 }
 
 export interface SalesDealCreateRequest extends IDataObject, SalesDealBaseFields {
@@ -28,6 +32,10 @@ export interface SalesDealUpdateRequest extends IDataObject {
 	description?: string;
 	stageId?: string;
 	priority?: SalesDealPriority;
+	cost?: number;
+	currency?: string;
+	vatRate?: number;
+	assignedToId?: string;
 }
 
 export interface SalesDealDeleteRequest extends IDataObject {

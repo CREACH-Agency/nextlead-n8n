@@ -66,6 +66,16 @@ export interface ContactBaseFields {
 	status?: ContactStatus;
 	birthDate?: string;
 	preferredLanguage?: string;
+	email3?: string;
+	image?: string;
+	optInMarketing?: boolean;
+	optInNewsletter?: boolean;
+	optInSms?: boolean;
+	optInPostal?: boolean;
+	optOut?: boolean;
+	utmSource?: string;
+	utmMedium?: string;
+	utmCampaign?: string;
 }
 
 /** Criteria accepted by `structure/get-single-structure`. */
@@ -83,6 +93,8 @@ export interface ContactEditRequest extends IDataObject {
 	mail?: string;
 	linkedin_find?: string;
 	values_update: IDataObject[];
+	/** Find or create: creates the contact when no identifier matches. */
+	create_if_missing?: boolean;
 }
 
 /** Body of `contact/delete-contact`. At least one identifier is required. */
