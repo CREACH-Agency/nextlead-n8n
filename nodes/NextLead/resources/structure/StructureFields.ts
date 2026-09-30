@@ -324,9 +324,9 @@ const linkToContactFields = [
 				description: 'Phone number',
 			},
 			{
-				name: 'mobile',
-				displayName: 'Mobile',
-				description: 'Mobile number',
+				name: 'phone2',
+				displayName: 'Secondary Phone',
+				description: 'Second phone number',
 			},
 		],
 	}),

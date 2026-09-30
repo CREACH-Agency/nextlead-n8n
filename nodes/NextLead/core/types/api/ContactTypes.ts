@@ -56,8 +56,8 @@ export interface ContactBaseFields {
 	lastName: string;
 	email: string;
 	phone?: string;
-	mobile?: string;
-	phonePro?: string;
+	phone2?: string;
+	phone3?: string;
 	email2?: string;
 	linkedin?: string;
 	activity?: string;
@@ -117,7 +117,7 @@ export interface ContactUpdateRequest
 export interface ContactSearchRequest extends IDataObject {
 	email?: string;
 	phone?: string;
-	mobile?: string;
+	phone2?: string;
 	linkedin?: string;
 	firstName?: string;
 	lastName?: string;
@@ -157,7 +157,7 @@ export interface ContactStructureLinkRequest {
 	email?: string;
 	linkedin_url?: string;
 	phone?: string;
-	mobile?: string;
+	phone2?: string;
 	customField?: {
 		customFieldTypeId: string;
 		value: string;
@@ -180,7 +180,7 @@ export interface ContactStructureLinkResponse {
 		lastName: string;
 		email: string;
 		phone: string;
-		mobile: string;
+		phone2: string;
 		structures?: Array<{ id: string; name: string }>;
 	};
 	structure: {

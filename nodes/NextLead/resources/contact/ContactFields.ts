@@ -265,14 +265,14 @@ const createFields = [
 			},
 			civilityField,
 			{
-				name: 'mobile',
+				name: 'phone2',
 				displayName: 'Secondary Phone',
-				description: 'Second phone number of the contact (mobile slot in NextLead)',
+				description: 'Second phone number of the contact',
 			},
 			{
-				name: 'phonePro',
+				name: 'phone3',
 				displayName: 'Third Phone',
-				description: 'Third phone number of the contact (professional slot in NextLead)',
+				description: 'Third phone number of the contact',
 			},
 			{
 				name: 'comment',
@@ -639,14 +639,14 @@ const updateFields = [
 				placeholder: 'name@email.com',
 			},
 			{
-				name: 'mobile',
+				name: 'phone2',
 				displayName: 'Secondary Phone',
-				description: 'Second phone number of the contact (mobile slot in NextLead)',
+				description: 'Second phone number of the contact',
 			},
 			{
-				name: 'phonePro',
+				name: 'phone3',
 				displayName: 'Third Phone',
-				description: 'Third phone number of the contact (professional slot in NextLead)',
+				description: 'Third phone number of the contact',
 			},
 			{
 				name: 'activity',
@@ -855,9 +855,9 @@ const linkToStructureFields = [
 				description: 'Phone number',
 			},
 			{
-				name: 'mobile',
+				name: 'phone2',
 				displayName: 'Secondary Phone',
-				description: 'Second phone number of the contact (mobile slot in NextLead)',
+				description: 'Second phone number of the contact',
 			},
 		],
 	}),
