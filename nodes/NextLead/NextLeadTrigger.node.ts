@@ -60,6 +60,10 @@ const EVENT_CONFIG: Record<string, EventConfig> = {
 	},
 };
 
+// Trigger nodes cannot be invoked as AI tools (n8n review of 0.3.0), and the
+// INodeTypeDescription type only allows `usableAsTool: true`, so the property
+// is left out and the community-nodes rule is disabled for this class only.
+// eslint-disable-next-line @n8n/community-nodes/node-usable-as-tool
 export class NextLeadTrigger implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'NextLead Trigger',
@@ -69,7 +73,6 @@ export class NextLeadTrigger implements INodeType {
 		version: 1,
 		subtitle: '={{$parameter["event"]}}',
 		description: 'Trigger workflows on NextLead events through polling',
-		usableAsTool: true,
 		defaults: {
 			name: 'NextLead Trigger',
 		},
