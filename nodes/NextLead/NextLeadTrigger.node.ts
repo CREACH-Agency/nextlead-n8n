@@ -250,9 +250,9 @@ export class NextLeadTrigger implements INodeType {
 
 			// "Fetch Test Event" must stay repeatable and must not dump a backlog of
 			// thousands of rows into the editor, so it samples the latest queued
-			// event without recording it.
+			// event without recording it. Every route answers newest first.
 			if (manual) {
-				const latest = items[items.length - 1];
+				const latest = items[0];
 				return latest ? [this.helpers.returnJsonArray([latest])] : null;
 			}
 
