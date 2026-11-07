@@ -19,7 +19,7 @@ Community node for [n8n](https://n8n.io) that integrates [NextLead CRM](https://
 | **List** | Create, Update, Delete |
 | **Identify** | Identify visitor |
 | **AI** | Run — send a natural language prompt to the NextLead AI agent |
-| **Trigger** | Poll for new/updated contacts and events |
+| **Trigger** | Poll for new/updated/deleted contacts and structures, list membership changes, and sales won or lost |
 
 > **AI → Run** is read-only by default. Writes require both the explicit **Allow Mutations** toggle and sufficient permissions for the member selected in **Execute as User**, whose role is enforced server-side.
 
