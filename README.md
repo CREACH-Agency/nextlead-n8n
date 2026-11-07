@@ -11,7 +11,7 @@ Community node for [n8n](https://n8n.io) that integrates [NextLead CRM](https://
 
 | Resource | Operations |
 |---|---|
-| **Contact** | Create, Update, Delete, Find, Add Note |
+| **Contact** | Create, Update, Delete, Find, Get Conversion Statuses, Get Custom Fields, Get Team |
 | **Structure** | Create, Update, Delete, List |
 | **Sale** | Create, Update, Delete |
 | **Action** | Create, Update, Delete |
