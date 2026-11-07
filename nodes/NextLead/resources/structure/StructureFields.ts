@@ -144,6 +144,17 @@ const createFields = [
 					loadOptionsMethod: 'getGroups',
 				},
 			},
+			{
+				displayName: 'Implantation Status Name or ID',
+				name: 'implantationStatusId',
+				type: 'options',
+				default: '',
+				description:
+					'Implantation status of the structure, listed with its pipeline. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				typeOptions: {
+					loadOptionsMethod: 'getImplantationStatuses',
+				},
+			},
 		],
 	}),
 ];
@@ -299,6 +310,17 @@ const updateFields = [
 					'Group to assign the structure to. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 				typeOptions: {
 					loadOptionsMethod: 'getGroups',
+				},
+			},
+			{
+				displayName: 'Implantation Status Name or ID',
+				name: 'implantationStatusId',
+				type: 'options',
+				default: '',
+				description:
+					'Implantation status of the structure, listed with its pipeline. Pick - None - to remove the current status. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				typeOptions: {
+					loadOptionsMethod: 'getImplantationStatuses',
 				},
 			},
 		],

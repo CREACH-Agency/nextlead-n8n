@@ -13,7 +13,13 @@ import {
 import { NextLeadErrorHandler } from './core/NextLeadErrorHandler';
 import { ResourceManager } from './core/ResourceManager';
 import { OperationType, ResourceType } from './core/types/NextLeadTypes';
-import { ConversionStatus } from './core/types/shared/ApiTypes';
+import { ContactCustomField } from './core/types/api/ContactTypes';
+import { SalesDealStage } from './core/types/api/SalesDealTypes';
+import {
+	ConversionStatus,
+	ImplantationStatus,
+	PipelineSummary,
+} from './core/types/shared/ApiTypes';
 import { ActionResource } from './resources/ActionResource';
 import { AiResource } from './resources/AiResource';
 import { ContactResource } from './resources/ContactResource';
@@ -42,23 +48,65 @@ const NONE_OPTION: INodePropertyOptions = { name: '- None -', value: '' };
 /** Structures fetched per dropdown page. The route caps `limit` at 500. */
 const STRUCTURE_PAGE_SIZE = 50;
 
-/** Tag-backed dropdowns (contact type, lead source, sector) share this shape. */
+/**
+ * Tag-backed dropdowns (contact type, lead source, sector) share this shape.
+ * A multiOptions field takes no "- None -" entry: an empty selection already
+ * says it.
+ */
 async function loadTagOptions(
 	context: ILoadOptionsFunctions,
 	route: string,
+	{ withNone = true }: { withNone?: boolean } = {},
 ): Promise<INodePropertyOptions[]> {
+	const none = withNone ? [NONE_OPTION] : [];
+
 	try {
 		const response = await fetchMetadata(context, route);
 
 		return [
-			NONE_OPTION,
+			...none,
 			...unwrapArray<INamedEntity>(response)
 				.filter((tag): tag is { id: string; name: string } => Boolean(tag.id && tag.name))
 				.map((tag) => ({ name: tag.name, value: tag.id })),
 		];
 	} catch {
-		return [NONE_OPTION];
+		return none;
 	}
+}
+
+/**
+ * Conversion statuses, implantation statuses and sales columns now belong to
+ * a pipeline, and two pipelines can each have a "Won" column. The pipeline
+ * name prefixes the label so the entries stay tellable apart; the value is
+ * still the bare ID.
+ */
+function pipelineLabel(name: string, pipeline?: PipelineSummary | null): string {
+	return pipeline?.name ? `${pipeline.name} — ${name}` : name;
+}
+
+/** Most select-like custom fields stay readable within this many choices. */
+const MAX_LISTED_CUSTOM_FIELD_OPTIONS = 10;
+
+/**
+ * The Value input stays free text — turning it into a dropdown would break
+ * the workflows already mapping an expression there — so the allowed values
+ * of a select-like field are surfaced as the hint of its entry instead.
+ */
+function customFieldOptionsHint(field: ContactCustomField): string | undefined {
+	const options = field.options ?? [];
+	if (options.length === 0) return undefined;
+
+	const listed = options
+		.slice(0, MAX_LISTED_CUSTOM_FIELD_OPTIONS)
+		.map((option) =>
+			option.label === option.value ? option.value : `${option.value} (${option.label})`,
+		);
+	const more =
+		options.length > MAX_LISTED_CUSTOM_FIELD_OPTIONS
+			? `, +${options.length - MAX_LISTED_CUSTOM_FIELD_OPTIONS} more`
+			: '';
+
+	return `Allowed values: ${listed.join(', ')}${more}`;
 }
 
 export class NextLead implements INodeType {
@@ -175,7 +223,7 @@ export class NextLead implements INodeType {
 					return [
 						NONE_OPTION,
 						...unwrapArray<ConversionStatus>(response).map((status) => ({
-							name: status.name,
+							name: pipelineLabel(status.name, status.pipeline),
 							value: status.id,
 						})),
 					];
@@ -185,6 +233,29 @@ export class NextLead implements INodeType {
 			},
 			async getContactTypes(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				return loadTagOptions(this, '/api/v2/receive/contact/get-contact-types');
+			},
+			async getContactTypesMulti(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				return loadTagOptions(this, '/api/v2/receive/contact/get-contact-types', {
+					withNone: false,
+				});
+			},
+			async getImplantationStatuses(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				try {
+					const response = await fetchMetadata(
+						this,
+						'/api/v2/receive/structure/get-implantation-status',
+					);
+
+					return [
+						NONE_OPTION,
+						...unwrapArray<ImplantationStatus>(response).map((status) => ({
+							name: pipelineLabel(status.name, status.pipeline),
+							value: status.id,
+						})),
+					];
+				} catch {
+					return [NONE_OPTION];
+				}
 			},
 			async getLeadSources(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				return loadTagOptions(this, '/api/v2/receive/contact/get-lead-sources');
@@ -196,8 +267,8 @@ export class NextLead implements INodeType {
 				try {
 					const response = await fetchMetadata(this, '/api/v2/receive/sales/get-columns');
 
-					return unwrapArray<{ id: string; name: string }>(response).map((column) => ({
-						name: column.name,
+					return unwrapArray<SalesDealStage>(response).map((column) => ({
+						name: pipelineLabel(column.name, column.pipeline),
 						value: column.id,
 					}));
 				} catch {
@@ -260,12 +331,14 @@ export class NextLead implements INodeType {
 
 					return [
 						NONE_OPTION,
-						...unwrapArray<{ id: string; name: string; groupName?: string }>(response).map(
-							(field) => ({
+						...unwrapArray<ContactCustomField>(response).map((field) => {
+							const hint = customFieldOptionsHint(field);
+							return {
 								name: field.groupName ? `${field.groupName} > ${field.name}` : field.name,
 								value: field.id,
-							}),
-						),
+								...(hint && { description: hint }),
+							};
+						}),
 					];
 				} catch {
 					return [NONE_OPTION];
