@@ -121,6 +121,15 @@ export class ContactResource implements IResourceStrategy {
 			...organizationFields,
 		};
 
+		// An empty selection on create means "no type picked", not "no type": sent
+		// as `[]` it would take precedence over a Contact Type set in NextLead Config.
+		const typeIds = ContactHelpers.normalizeTypeIds(contactData.typeIds);
+		if (typeIds && typeIds.length > 0) {
+			contactData.typeIds = typeIds;
+		} else {
+			delete contactData.typeIds;
+		}
+
 		const socials = ContactHelpers.transformComplexField(
 			context.getNodeParameter('socials', itemIndex, {}) as IDataObject,
 			'social',
@@ -321,6 +330,10 @@ export class ContactResource implements IResourceStrategy {
 		const rawUpdateFields = ContactHelpers.normalizeCrmAliases(
 			context.getNodeParameter('updateFields', itemIndex, {}) as IDataObject,
 		);
+
+		// Unlike create, an empty selection is sent as is: `[]` removes every type.
+		const typeIds = ContactHelpers.normalizeTypeIds(rawUpdateFields.typeIds);
+		if (typeIds) rawUpdateFields.typeIds = typeIds;
 
 		const customFields = ContactHelpers.transformCustomFields(
 			context.getNodeParameter('customFieldsUpdate', itemIndex, {}) as IDataObject,

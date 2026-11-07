@@ -12,12 +12,68 @@ import { NextLeadApiService } from './core/NextLeadApiService';
 import { NextLeadApiResponse } from './core/types/shared/ApiTypes';
 import { NextLeadCredentials } from './core/types/n8n/RequestTypes';
 import { NextLeadErrorHandler } from './core/NextLeadErrorHandler';
+import { SaleCompletionEvent, SaleCompletionOutcome } from './core/types/api/SalesDealTypes';
 import { unwrapArray } from './utils/MetadataCache';
 import { DedupStrategy, PollDedupStore } from './utils/PollDedup';
 
+interface FetchOptions {
+	/** "Fetch Test Event": a single, most recent event is enough. */
+	manual: boolean;
+	/** No dedup state yet: this poll only records a baseline. */
+	firstRun: boolean;
+	/** Whether an earlier poll already emitted this event. */
+	isKnown: (item: IDataObject) => boolean;
+}
+
 interface EventConfig {
-	fetch: (apiService: NextLeadApiService, context: IPollFunctions) => Promise<NextLeadApiResponse>;
+	fetch: (
+		apiService: NextLeadApiService,
+		context: IPollFunctions,
+		options: FetchOptions,
+	) => Promise<NextLeadApiResponse>;
 	strategy: DedupStrategy;
+}
+
+/** Closures per page. The route caps `limit` at 200 (default 100). */
+const SALE_PAGE_SIZE = 200;
+
+/** Pages walked per poll, so a mass closure cannot turn one poll into a crawl. */
+const SALE_MAX_PAGES = 5;
+
+/**
+ * Unlike the contact and structure queues, the sale-won / sale-lost routes
+ * page backwards through `X-Next-Cursor`, newest closure first. A poll walks
+ * pages until it reaches a closure an earlier poll already emitted — every
+ * older one was handled then — so a burst of closures between two polls is
+ * not truncated at the page size. The route reflects the current state: a sale
+ * reopened before the poll is absent, and closing it again yields a new `id`.
+ */
+async function fetchCompletedSales(
+	apiService: NextLeadApiService,
+	context: IPollFunctions,
+	outcome: SaleCompletionOutcome,
+	{ manual, firstRun, isKnown }: FetchOptions,
+): Promise<NextLeadApiResponse> {
+	const events: SaleCompletionEvent[] = [];
+	let cursor: string | undefined;
+
+	for (let page = 0; page < SALE_MAX_PAGES; page++) {
+		const response = await apiService.pollSalesCompleted(context, outcome, {
+			limit: manual ? 1 : SALE_PAGE_SIZE,
+			...(cursor && { cursor }),
+		});
+
+		if (!response.success) return response;
+
+		const { events: pageEvents, nextCursor } = response.data ?? { events: [], nextCursor: null };
+		events.push(...pageEvents);
+
+		// The baseline and the test sample only need the newest page.
+		if (manual || firstRun || !nextCursor || pageEvents.some(isKnown)) break;
+		cursor = nextCursor;
+	}
+
+	return { success: true, data: events };
 }
 
 /**
@@ -57,6 +113,17 @@ const EVENT_CONFIG: Record<string, EventConfig> = {
 	emailRemovedFromList: {
 		fetch: (apiService, context) => apiService.pollEmailRemovedFromList(context),
 		strategy: 'versioned',
+	},
+	// `id` is `<saleId>:<closure date>`, unique per closure: the bare id is the key.
+	saleWon: {
+		fetch: (apiService, context, options) =>
+			fetchCompletedSales(apiService, context, 'won', options),
+		strategy: 'id',
+	},
+	saleLost: {
+		fetch: (apiService, context, options) =>
+			fetchCompletedSales(apiService, context, 'lost', options),
+		strategy: 'id',
 	},
 };
 
@@ -119,6 +186,16 @@ export class NextLeadTrigger implements INodeType {
 						description: 'Trigger when an email is removed from a list',
 					},
 					{
+						name: 'Sale Lost',
+						value: 'saleLost',
+						description: 'Trigger when a sale is closed as lost',
+					},
+					{
+						name: 'Sale Won',
+						value: 'saleWon',
+						description: 'Trigger when a sale is closed as won',
+					},
+					{
 						name: 'Structure Created',
 						value: 'structureCreated',
 						description: 'Trigger when a new structure is created',
@@ -150,7 +227,15 @@ export class NextLeadTrigger implements INodeType {
 			const credentials = (await this.getCredentials('nextLeadApi')) as NextLeadCredentials;
 			const apiService = new NextLeadApiService(credentials);
 
-			const response = await config.fetch(apiService, this);
+			const webhookData = this.getWorkflowStaticData('node');
+			const store = PollDedupStore.load(webhookData, event);
+			const manual = this.getMode() === 'manual';
+
+			const response = await config.fetch(apiService, this, {
+				manual,
+				firstRun: store.isFirstRun,
+				isKnown: (item) => store.has(item, config.strategy),
+			});
 
 			// A failed poll used to be swallowed: the trigger simply never fired and
 			// left no trace, so a revoked key or a 500 looked like "no new events".
@@ -166,13 +251,11 @@ export class NextLeadTrigger implements INodeType {
 			// "Fetch Test Event" must stay repeatable and must not dump a backlog of
 			// thousands of rows into the editor, so it samples the latest queued
 			// event without recording it.
-			if (this.getMode() === 'manual') {
+			if (manual) {
 				const latest = items[items.length - 1];
 				return latest ? [this.helpers.returnJsonArray([latest])] : null;
 			}
 
-			const webhookData = this.getWorkflowStaticData('node');
-			const store = PollDedupStore.load(webhookData, event);
 			const newItems = store.filterNew(items, config.strategy);
 
 			// Only commit when the queue answered: an empty response must not wipe

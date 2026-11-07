@@ -65,7 +65,7 @@ const crmConfigFields: IFieldConfig[] = [
 		displayName: 'Contact Type Name or ID',
 		name: 'contact_type',
 		description:
-			'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+			'Replaces all the contact types with this single one. Use Contact Type Names or IDs to set several. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 		type: 'options',
 		default: '',
 		typeOptions: { loadOptionsMethod: 'getContactTypes' },
@@ -102,6 +102,22 @@ const crmConfigFields: IFieldConfig[] = [
 		typeOptions: { loadOptionsMethod: 'getSectors' },
 	},
 ];
+
+/**
+ * Every type of the contact at once, sent as `typeIds`: at the body root on
+ * create, inside `values_update` on update. A selection replaces the whole set
+ * and takes precedence over the single `contact_type`, which only stays for
+ * the workflows built before contacts could carry several types.
+ */
+const contactTypeIdsField: IFieldConfig = {
+	displayName: 'Contact Type Names or IDs',
+	name: 'typeIds',
+	description:
+		'Contact types to set, replacing the current ones. Takes precedence over Contact Type. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+	type: 'multiOptions',
+	default: [],
+	typeOptions: { loadOptionsMethod: 'getContactTypesMulti' },
+};
 
 /**
  * Conversion status is defined once and reused: it belongs to the same
@@ -373,6 +389,7 @@ const createFields = [
 				displayName: 'Preferred Language',
 				description: 'Preferred language of the contact, as a locale code such as fr or en',
 			},
+			contactTypeIdsField,
 			...extendedContactFields,
 		],
 	}),
@@ -782,6 +799,11 @@ const updateFields = [
 				typeOptions: { minValue: 0, maxValue: 100 },
 			},
 			...crmConfigFields,
+			{
+				...contactTypeIdsField,
+				description:
+					'Contact types to set, replacing all the current ones. Leave the selection empty to remove every type. Takes precedence over Contact Type. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+			},
 			...extendedContactUpdateFields,
 		],
 	}),

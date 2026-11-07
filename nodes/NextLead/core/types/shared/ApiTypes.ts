@@ -18,6 +18,13 @@ export interface NextLeadListResponse extends IDataObject {
 	updatedAt: string;
 }
 
+/** Pipeline reference carried by pipeline-scoped tags and sales columns. */
+export interface PipelineSummary {
+	id: string;
+	name: string;
+	kind: string;
+}
+
 export interface ConversionStatus {
 	id: string;
 	name: string;
@@ -26,6 +33,13 @@ export interface ConversionStatus {
 	icon?: string;
 	order?: number;
 	organizationId?: string;
+	/** Pipeline the status belongs to, null for a status outside any pipeline. */
+	pipeline?: PipelineSummary | null;
+}
+
+/** Tag of type IMPLANTATION_STATUS, from `structure/get-implantation-status`. */
+export interface ImplantationStatus extends ConversionStatus {
+	pipeline: PipelineSummary | null;
 }
 
 export type ResourceType =

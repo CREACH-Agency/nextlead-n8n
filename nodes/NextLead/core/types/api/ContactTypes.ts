@@ -25,6 +25,10 @@ export interface ContactSocial {
  * but sends them under these shorter API names.
  */
 export interface ContactCrmConfig {
+	/**
+	 * Legacy single type. Since November 2026 it replaces *all* the contact's
+	 * types with this one; `typeIds` is the multi-type form.
+	 */
 	contact_type?: string;
 	lead_source?: string;
 	sector?: string;
@@ -112,6 +116,12 @@ export interface ContactManagementFields {
 	custom_fields?: ContactCustomFields[];
 	lead_score?: number;
 	conversionStatusId?: string;
+	/**
+	 * CONTACT_TYPE tag IDs. Read at the body root by `new-contact` and inside
+	 * `values_update` by `edit-contact`, where it replaces every type and `[]`
+	 * clears them. Takes precedence over `contact_type`.
+	 */
+	typeIds?: string[];
 }
 
 export interface ContactCreateRequest
@@ -135,11 +145,43 @@ export interface ContactSearchRequest extends IDataObject {
 	lastName?: string;
 }
 
+/** Tag reference (contact type, lead source, sector...). */
+export interface ContactTagSummary extends IDataObject {
+	id: string;
+	name: string;
+}
+
 export interface ContactResponse extends IDataObject, ContactBaseFields {
 	id: string;
 	createdAt: string;
 	updatedAt: string;
 	customFields?: Record<string, unknown>;
+	/** Every type of the contact (create, edit and the contact polling routes). */
+	types?: ContactTagSummary[];
+}
+
+/** One custom field value, keyed by the field ID listed by `get-custom-fields`. */
+export interface ContactCustomFieldValue extends IDataObject {
+	id: string;
+	value: string;
+}
+
+/**
+ * Match returned by `contact/find-contact`, in snake_case. Only the fields the
+ * node relies on or that the API added since 0.3 are spelled out.
+ */
+export interface ContactFindResult extends IDataObject {
+	found?: boolean;
+	id?: string;
+	/** Legacy first type, kept next to the multi-type fields. */
+	contact_type_id?: string | null;
+	contact_type_ids?: string[];
+	contact_types?: ContactTagSummary[];
+	lead_source_id?: string | null;
+	sector_id?: string | null;
+	assigned_to_id?: string | null;
+	created_by_id?: string | null;
+	custom_fields?: ContactCustomFieldValue[];
 }
 
 export interface ContactTeamMember extends IDataObject {
@@ -156,12 +198,25 @@ export interface ContactConversionData extends IDataObject {
 	period: string;
 }
 
+/** Choice offered by a select-like custom field. */
+export interface CustomFieldOption extends IDataObject {
+	value: string;
+	label: string;
+}
+
+/** Entry of `contact/get-custom-fields` and `structure/get-custom-fields`. */
 export interface ContactCustomField extends IDataObject {
 	id: string;
 	name: string;
-	type: 'text' | 'number' | 'boolean' | 'date' | 'select';
-	required: boolean;
-	options?: string[];
+	type: string;
+	code?: string | null;
+	category?: string | null;
+	/** Contact fields carry `teamId`, structure fields `groupId`. */
+	teamId?: string;
+	groupId?: string;
+	groupName?: string;
+	/** Allowed values, empty for free-form fields. */
+	options?: CustomFieldOption[];
 }
 
 export interface ContactStructureLinkRequest {

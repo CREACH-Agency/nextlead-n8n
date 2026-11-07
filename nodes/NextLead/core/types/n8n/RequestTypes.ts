@@ -19,6 +19,11 @@ export interface RequestConfig {
 	headers?: Record<string, string>;
 	/** Request timeout in ms, for endpoints slower than the default */
 	timeout?: number;
+	/**
+	 * Resolve with `{ body, headers, statusCode }` instead of the body alone, for
+	 * routes that page through a response header (`X-Next-Cursor`).
+	 */
+	returnFullResponse?: boolean;
 }
 
 export interface NextLeadCredentials {

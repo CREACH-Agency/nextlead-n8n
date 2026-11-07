@@ -60,6 +60,12 @@ export class StructureResource implements IResourceStrategy {
 			...additionalFields,
 		};
 
+		// `new-structure` rejects an empty implantation status with a 400, and
+		// "- None -" on create simply means none was picked.
+		if (structureData.implantationStatusId === '') {
+			delete structureData.implantationStatusId;
+		}
+
 		const response = await apiService.createStructure(context, structureData);
 
 		return ResponseUtils.formatSingleResponse(context, response);
@@ -89,6 +95,13 @@ export class StructureResource implements IResourceStrategy {
 
 		if (!structureId && !findSiret && !findName) {
 			throw new Error('Provide a structure ID, a SIRET or a name to identify the structure');
+		}
+
+		// The field is only present when the user added it, so "- None -" there
+		// is a request to remove the status — which the API spells `null`; an
+		// empty string would be rejected with a 400.
+		if (updateFields.implantationStatusId === '') {
+			updateFields.implantationStatusId = null;
 		}
 
 		// `edit-structure` matches any of id / siret / name; with create_if_missing

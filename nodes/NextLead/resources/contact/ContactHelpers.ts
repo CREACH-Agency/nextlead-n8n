@@ -83,6 +83,21 @@ export class ContactHelpers {
 		return cleaned;
 	}
 
+	/**
+	 * `typeIds` must reach the API as an array of IDs. An expression mapped onto
+	 * the multi-select can resolve to a single ID or a comma-separated string,
+	 * which the API would reject with a 400, so both are split into the array.
+	 * Returns undefined when the field was not set at all.
+	 */
+	static normalizeTypeIds(value: unknown): string[] | undefined {
+		if (value === undefined || value === null) return undefined;
+
+		const raw = Array.isArray(value) ? value : String(value).split(',');
+		return raw
+			.map((entry) => (typeof entry === 'string' ? entry.trim() : String(entry)))
+			.filter((entry) => entry.length > 0);
+	}
+
 	/** Rewrites the Zapier-style `contact_*` keys to the names the API expects. */
 	static normalizeCrmAliases(fields: IDataObject): IDataObject {
 		const normalized: IDataObject = {};

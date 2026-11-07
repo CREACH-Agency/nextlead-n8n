@@ -23,13 +23,21 @@ export interface IFieldConfig {
 	name: string;
 	displayName: string;
 	description: string;
-	type?: 'string' | 'number' | 'boolean' | 'options' | 'resourceLocator' | 'dateTime';
+	type?:
+		| 'string'
+		| 'number'
+		| 'boolean'
+		| 'options'
+		| 'multiOptions'
+		| 'resourceLocator'
+		| 'dateTime';
 	options?: IFieldOptionConfig[];
 	modes?: IResourceLocatorModeConfig[];
 	required?: boolean;
 	placeholder?: string;
 	default?:
 		| string
+		| string[]
 		| number
 		| boolean
 		| {
