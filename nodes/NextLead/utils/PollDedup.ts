@@ -138,6 +138,14 @@ export class PollDedupStore {
 	}
 
 	/**
+	 * Whether an item was already recorded, without recording it. Lets a paged
+	 * fetch stop as soon as it reaches events emitted by an earlier poll.
+	 */
+	has(item: IDataObject, strategy: DedupStrategy): boolean {
+		return this.seen.has(buildEventKey(item, strategy));
+	}
+
+	/**
 	 * Return the items not seen before and record them. An empty response leaves
 	 * the store untouched: a transient empty answer must not make the node forget
 	 * a backlog it would then re-emit in full.
