@@ -68,7 +68,9 @@ export class NextLeadApiService {
 				};
 			}
 
-			const response = await context.helpers.requestWithAuthentication.call(
+			// `requestWithAuthentication` (request-promise) is deprecated and rejected
+			// by the n8n community package scan since 0.4.1.
+			const response = await context.helpers.httpRequestWithAuthentication.call(
 				context,
 				'nextLeadApi',
 				requestOptions,
