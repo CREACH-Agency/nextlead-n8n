@@ -148,9 +148,14 @@ export function createNextLeadError(error: unknown): NextLeadError {
 			message?: string;
 			description?: unknown;
 			body?: unknown;
-			response?: { body?: unknown };
+			response?: { body?: unknown; data?: unknown };
 			error?: unknown;
-			cause?: { body?: unknown; error?: unknown; response?: { body?: unknown } };
+			cause?: {
+				body?: unknown;
+				error?: unknown;
+				response?: { body?: unknown; data?: unknown };
+			};
+			context?: { data?: unknown };
 		};
 
 		// When n8n wrapped the rejection, `message` is a canned per-status sentence
@@ -164,6 +169,12 @@ export function createNextLeadError(error: unknown): NextLeadError {
 			extractApiMessage(httpError.cause?.body) ||
 			extractApiMessage(httpError.cause?.error) ||
 			extractApiMessage(httpError.cause?.response?.body) ||
+			// `httpRequestWithAuthentication` (axios) puts the body under
+			// `response.data`; wrapped in a NodeApiError, it sits on the original
+			// error (`cause`) and, when it is an object, in `context.data`.
+			extractApiMessage(httpError.response?.data) ||
+			extractApiMessage(httpError.cause?.response?.data) ||
+			extractApiMessage(httpError.context?.data) ||
 			extractApiMessage(httpError.description);
 
 		return {
@@ -171,7 +182,10 @@ export function createNextLeadError(error: unknown): NextLeadError {
 			code: `HTTP_${statusCode}`,
 			statusCode,
 			fromApiBody: apiMessage !== '',
-			retryAfter: readHeader(httpError.response, 'retry-after') ?? readHeader(error, 'retry-after'),
+			retryAfter:
+				readHeader(httpError.response, 'retry-after') ??
+				readHeader(httpError.cause?.response, 'retry-after') ??
+				readHeader(error, 'retry-after'),
 			details: {
 				body: httpError.body,
 				response: httpError.response,
